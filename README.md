@@ -1,2 +1,0 @@
-# AmariWellness
-Massage Chairs
