@@ -6,6 +6,16 @@ Next.js (App Router) + Tailwind CSS v4 marketing site for Amari Wellness, a fict
 
 Start it with `npm run dev` / `pnpm dev` (`next dev`, Turbopack by default). Not run automatically — start it yourself when you need to see changes live.
 
+## Pushing to GitHub
+
+This machine has **no working git** — Xcode Command Line Tools are not installed, so `git` and `gh` both fail. Until `xcode-select --install` has been run, push with:
+
+```
+node scripts/push.mjs "commit message"
+```
+
+It writes a single commit to `alleluiacervi-tech/AmariWellness` through the GitHub Git Data API. The token is read from the macOS Keychain (service `amari-github-pat`), never from a file — never write a token into the repo. Once real git is available, use it instead and delete `scripts/push.mjs`.
+
 ## Project Structure
 
 This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
