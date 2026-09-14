@@ -1,5 +1,6 @@
 import Link from '@/components/Link'
 import FadeIn from '@/components/FadeIn'
+import Figure from '@/components/Figure'
 import Placeholder from '@/components/Placeholder'
 import SessionRecommender from '@/components/SessionRecommender'
 import { SESSIONS, OFF_PEAK } from '@/data/sessions'
@@ -102,7 +103,13 @@ export default function HomePage() {
 
           <div className="offering offering--reverse">
             <div className="offering__media">
-              <Placeholder shot="The reading lounge — shelf, chairs, daylight. Shot from the doorway so the scale and the quiet read immediately." />
+              {/* Interim stock — verified as genuine library shelving, no branding,
+                  no people. Replace with the real lounge once it is built. */}
+              <Figure
+                src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=900&h=700&fit=crop&auto=format&q=80"
+                alt="Library shelving lit by warm hanging bulbs"
+                sizes="(min-width: 900px) 50vw, 100vw"
+              />
             </div>
             <div className="offering__body">
               <p className="label">The lounge</p>

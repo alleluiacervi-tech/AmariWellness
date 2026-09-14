@@ -2,6 +2,7 @@ import Link from '@/components/Link'
 import FadeIn from '@/components/FadeIn'
 import Accordion from '@/components/Accordion'
 import LocationCard from '@/components/LocationCard'
+import Figure from '@/components/Figure'
 import Placeholder from '@/components/Placeholder'
 import { SPACE_FAQS, HYGIENE_PROTOCOL, SHELF } from '@/data/site'
 
@@ -60,7 +61,13 @@ export default function SpacePage() {
             <p className="rooms-gallery__name">A suite</p>
           </div>
           <div className="rooms-gallery__cell">
-            <Placeholder shot="The shelf, straight on, close enough to read some spines." />
+            {/* Interim stock — verified. Note it reads as a large public library,
+                so it oversells the scale of a small shelf. Replace early. */}
+            <Figure
+              src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=700&h=900&fit=crop&auto=format&q=80"
+              alt="Rows of books on library shelves"
+              sizes="(min-width: 900px) 33vw, 100vw"
+            />
             <p className="rooms-gallery__name">The shelf</p>
           </div>
           <div className="rooms-gallery__cell">
