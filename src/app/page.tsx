@@ -5,6 +5,7 @@ import Placeholder from '@/components/Placeholder'
 import SessionRecommender from '@/components/SessionRecommender'
 import { SESSIONS, OFF_PEAK } from '@/data/sessions'
 import { SITE_CONFIG, VISIT_STEPS, HYGIENE_PROTOCOL } from '@/data/site'
+import { IMAGES } from '@/data/images'
 
 export const metadata = {
   title: 'Amari — A Chair. A Quiet Room. Time to Think.',
@@ -70,7 +71,7 @@ export default function HomePage() {
         <section className="offerings" aria-label="What this is">
           <div className="offering">
             <div className="offering__media">
-              <Placeholder shot="The chair, reclined, lit low. Wide enough to read the room around it — this is the photograph that explains the whole concept." />
+              <Figure {...IMAGES.suiteMood} sizes="(min-width: 900px) 50vw, 100vw" />
             </div>
             <div className="offering__body">
               <p className="label">The suites</p>
@@ -103,13 +104,7 @@ export default function HomePage() {
 
           <div className="offering offering--reverse">
             <div className="offering__media">
-              {/* Interim stock — verified as genuine library shelving, no branding,
-                  no people. Replace with the real lounge once it is built. */}
-              <Figure
-                src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=900&h=700&fit=crop&auto=format&q=80"
-                alt="Library shelving lit by warm hanging bulbs"
-                sizes="(min-width: 900px) 50vw, 100vw"
-              />
+              <Figure {...IMAGES.lounge} sizes="(min-width: 900px) 50vw, 100vw" />
             </div>
             <div className="offering__body">
               <p className="label">The lounge</p>

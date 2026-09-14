@@ -1,9 +1,14 @@
 import Link from '@/components/Link'
 import FadeIn from '@/components/FadeIn'
 import Accordion from '@/components/Accordion'
-import Placeholder from '@/components/Placeholder'
+import Figure from '@/components/Figure'
 import { SESSIONS, PARTNER_SESSIONS, OFF_PEAK } from '@/data/sessions'
 import { CHAIR_FAQS } from '@/data/site'
+import { IMAGES } from '@/data/images'
+
+/* Mood imagery, one per programme — these set tone, they do not depict
+   the chairs. Swap for real suite photography when it exists. */
+const SESSION_IMAGES = [IMAGES.readingLamp, IMAGES.windowSeat, IMAGES.timberRoom]
 
 export const metadata = {
   title: 'The Chairs & Programmes',
@@ -50,8 +55,9 @@ export default function SessionsPage() {
             aria-labelledby={`s-${s.id}`}
           >
             <div className="session__media">
-              <Placeholder
-                shot={`${s.name} — the chair mid-programme, ${s.durationMinutes === 15 ? 'framed on the head and shoulders' : s.durationMinutes === 30 ? 'full chair, reclined' : 'wide, the whole room with the chair fully back'}.`}
+              <Figure
+                {...SESSION_IMAGES[i % SESSION_IMAGES.length]}
+                sizes="(min-width: 900px) 50vw, 100vw"
               />
             </div>
 

@@ -3,8 +3,8 @@ import FadeIn from '@/components/FadeIn'
 import Accordion from '@/components/Accordion'
 import LocationCard from '@/components/LocationCard'
 import Figure from '@/components/Figure'
-import Placeholder from '@/components/Placeholder'
 import { SPACE_FAQS, HYGIENE_PROTOCOL, SHELF } from '@/data/site'
+import { IMAGES } from '@/data/images'
 
 export const metadata = {
   title: 'The Space',
@@ -17,7 +17,7 @@ export default function SpacePage() {
     <main className="space-page" id="main-content">
       {/* ── HERO ── */}
       <div className="space-page__hero">
-        <Placeholder shot="Wide interior — the corridor of suite doors, or the lounge seen from the entrance. This is the first impression of the space; shoot it in the best natural light of the day." />
+        <Figure {...IMAGES.architecture} eager sizes="100vw" />
         <div className="space-page__hero-scrim" />
         <div className="space-page__hero-title">
           <p className="label" style={{ color: 'var(--on-dark-meta)', marginBottom: '16px' }}>
@@ -57,21 +57,15 @@ export default function SpacePage() {
       <FadeIn>
         <section className="rooms-gallery" aria-label="The rooms">
           <div className="rooms-gallery__cell">
-            <Placeholder shot="A single suite with the door open — chair, side table, lamp. Show that it is genuinely a private room, not a curtained bay." />
+            <Figure {...IMAGES.quietRoom} sizes="(min-width: 900px) 33vw, 100vw" />
             <p className="rooms-gallery__name">A suite</p>
           </div>
           <div className="rooms-gallery__cell">
-            {/* Interim stock — verified. Note it reads as a large public library,
-                so it oversells the scale of a small shelf. Replace early. */}
-            <Figure
-              src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=700&h=900&fit=crop&auto=format&q=80"
-              alt="Rows of books on library shelves"
-              sizes="(min-width: 900px) 33vw, 100vw"
-            />
+            <Figure {...IMAGES.shelves} sizes="(min-width: 900px) 33vw, 100vw" />
             <p className="rooms-gallery__name">The shelf</p>
           </div>
           <div className="rooms-gallery__cell">
-            <Placeholder shot="The lounge with someone reading, shot from behind so nobody is identifiable. Warm, quiet, unstaged." />
+            <Figure {...IMAGES.loungeChair} sizes="(min-width: 900px) 33vw, 100vw" />
             <p className="rooms-gallery__name">The lounge</p>
           </div>
         </section>
