@@ -1,6 +1,6 @@
 # amari-wellness
 
-Next.js (App Router) + Tailwind CSS v4 marketing site for Amari Wellness, a fictional automated massage-chair lounge in London.
+Next.js (App Router) + Tailwind CSS v4 marketing site for Amari, a fictional automated massage-chair lounge in Kimihurura, Kigali, Rwanda.
 
 ## Development Server
 
@@ -22,12 +22,12 @@ This is the canonical project structure. Start with task-relevant files below. O
 
 - `src/app/layout.tsx` - Root layout: `<html>`/`<body>` shell, `next/font` (DM Sans + Lora) wiring, global `Nav`/`Footer`, and the default site `metadata`
 - `src/app/globals.css` - Global CSS entrypoint and Tailwind CSS v4 import (`@import 'tailwindcss'`), plus the hand-written design-token system (`@theme`, CSS custom properties, component classes)
-- `src/app/page.tsx`, `src/app/*/page.tsx`, `src/app/journal/[slug]/page.tsx` - Route pages (App Router file-based routing). Static/content pages are Server Components with a `metadata` export; pages needing interactivity (`book`, `contact`) are `'use client'` and get their `metadata` from a sibling `layout.tsx` instead, since a client page cannot export `metadata` itself
+- `src/app/page.tsx`, `src/app/*/page.tsx` - Route pages (App Router file-based routing): `/`, `/space`, `/sessions`, `/packs`, `/book`, `/contact`. Static/content pages are Server Components with a `metadata` export; pages needing interactivity (`book`, `contact`) are `'use client'` and get their `metadata` from a sibling `layout.tsx` instead, since a client page cannot export `metadata` itself
 - `src/app/not-found.tsx` - Global 404 (Next.js special file convention)
-- `src/components/` - Shared UI. Anything using hooks/browser APIs/event handlers is marked `'use client'` at the top (`Nav`, `Link`, `Figure`, `FadeIn`, `Accordion`, `SessionRecommender`); purely presentational components (`Footer`, `LocationCard`) stay Server Components even though they're rendered from client trees
+- `src/components/` - Shared UI. Anything using hooks/browser APIs/event handlers is marked `'use client'` at the top (`Nav`, `Link`, `Figure`, `Reveal`, `Accordion`, `SessionRecommender`, `StickyBook`, `Footer`); purely presentational components (`Placeholder`, `LocationCard`) stay Server Components even though they're rendered from client trees
 - `src/components/Link.tsx` - Thin wrapper around `next/link` that adds a smooth scroll-to-top on non-hash navigations
 - `src/components/Figure.tsx` - Wraps `next/image` (`fill` + `sizes`) with a loading shimmer and an error fallback card
-- `src/data/*.ts` - Typed static content (site info, sessions, membership tiers, journal articles) consumed by the pages
+- `src/data/*.ts` - Typed static content (site info, sessions, prepaid packs, image set) consumed by the pages. `journal.ts` holds six written articles that no route currently renders
 - `public/` - Static assets served from `/`, e.g. `amari-horizontal.svg`
 - `next.config.mjs` - `images.remotePatterns` (allows `images.unsplash.com`) and `turbopack.root`
 - `postcss.config.mjs` - Wires the Tailwind v4 PostCSS plugin (`@tailwindcss/postcss`)
@@ -43,7 +43,23 @@ This is the canonical project structure. Start with task-relevant files below. O
 
 This project uses **Tailwind CSS v4** through the `@tailwindcss/postcss` plugin configured in `postcss.config.mjs`. `src/app/globals.css` imports Tailwind with `@import 'tailwindcss';` and defines the brand palette/type scale in an `@theme` block plus plain CSS custom properties. Use Tailwind utility classes directly in JSX; put global CSS or Tailwind v4 theme customization in `src/app/globals.css`. This project does not need a `tailwind.config.js`.
 
-Fonts (DM Sans, Lora) are loaded via `next/font/google` in `src/app/layout.tsx` and exposed as the `--font-dm-sans` / `--font-lora` CSS variables, which `globals.css`'s `--font-sans` / `--font-serif` tokens build on — don't reintroduce a manual Google Fonts `@import` or hardcode a literal font-family string; reference `var(--font-sans)` / `var(--font-serif)` instead.
+Fonts (DM Sans, DM Mono, Lora) are loaded via `next/font/google` in `src/app/layout.tsx` and exposed as the `--font-dm-sans` / `--font-dm-mono` / `--font-lora` CSS variables, which `globals.css`'s `--font-sans` / `--font-mono` / `--font-serif` tokens build on — don't reintroduce a manual Google Fonts `@import` or hardcode a literal font-family string (a literal loses `next/font`'s metric-matched fallback); reference `var(--font-sans)` / `var(--font-serif)` / `var(--font-mono)` instead.
+
+### The three type roles
+
+One rule, and it is worth keeping:
+
+- **Lora (serif)** — the room speaks. Display headlines, page titles, quotes, session names.
+- **DM Sans** — you speak. Body copy, UI, labels, navigation, buttons.
+- **DM Mono** — the machine speaks. Durations, prices, times, reference codes, step numbers, Plus Codes. Nothing that isn't data.
+
+### Surfaces
+
+Sections declare a surface class — `.surface-paper`, `.surface-dim`, `.surface-dark`, `.surface-deep` — and every component reads the resulting `--s-ground` / `--s-ink` / `--s-body` / `--s-meta` / `--s-rule` / `--s-accent` / `--s-focus` tokens rather than a literal colour. Buttons, rules, form fields and focus rings then come out correct on any ground automatically. **Never hardcode a colour in a component**; if a component looks wrong on a surface, the surface's tokens are what to fix.
+
+Gold (`--gold`) means one thing: the machine. Durations, prices, controls, timings. It is not a decorative bullet. Sage marks the human and organic. On light grounds use `--gold-text` / `--sage-text`, which clear AA; the raw brand tones only pass on dark.
+
+Pages whose first screen is a dark full-bleed surface mark it with `data-dark-top`; `Nav` reads that from the DOM and floats transparent over it until it scrolls past.
 
 ## Routing & Server/Client boundary
 
