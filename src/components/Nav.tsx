@@ -1,102 +1,130 @@
-'use client'
+"use client"
 
-import { useEffect, useState, useRef } from 'react'
-import Link from '@/components/Link'
-import { usePathname } from 'next/navigation'
-import { SITE_CONFIG } from '@/data/site'
+/* Pages that open on a dark full-bleed surface mark themselves with
+   data-dark-top. The nav floats over those until it pins, switching
+   its whole surface token set rather than just a text colour — which
+   is what previously left ink-coloured links on a dark panel. Reading
+   the page rather than a route list means a new dark page can never
+   be forgotten here. */
+/* Pin once the dark surface has mostly scrolled past, so the
+         nav never sits half on one ground and half on the other. */ /* Booking is the whole point — it should never require
+              opening a menu first. */
 
-const logoSvg = '/amari-horizontal.svg'
+import { useEffect, useState, useRef } from "react"
+import Link from "@/components/Link"
+import { usePathname } from "next/navigation"
+import { SITE_CONFIG } from "@/data/site"
+
+const logoSvg = "/amari-horizontal.svg"
 
 const NAV_LINKS = [
-  { label: 'The Space', href: '/space' },
-  { label: 'The Chairs', href: '/sessions' },
-  { label: 'Packs', href: '/packs' },
-  { label: 'Contact', href: '/contact' },
-  { label: 'Book', href: '/book', isPrimary: true },
+  { label: "The Space", href: "/space" },
+  { label: "The Chairs", href: "/sessions" },
+  { label: "Packs", href: "/packs" },
+  { label: "Contact", href: "/contact" },
 ]
 
 const ALL_MOBILE_LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'The Space', href: '/space' },
-  { label: 'The Chairs & Programmes', href: '/sessions' },
-  { label: 'Session Packs', href: '/packs' },
-  { label: 'Contact & Location', href: '/contact' },
-  { label: 'Book a Session', href: '/book', isPrimary: true },
+  { label: "Home", href: "/" },
+  { label: "The Space", href: "/space" },
+  { label: "The Chairs", href: "/sessions" },
+  { label: "Session Packs", href: "/packs" },
+  { label: "Contact", href: "/contact" },
+  { label: "Book a chair", href: "/book", isPrimary: true },
 ]
 
 export default function Nav() {
   const [pinned, setPinned] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
-  const isHome = pathname === '/'
   const closeBtnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
+    const darkTop = document.querySelector<HTMLElement>("[data-dark-top]")
+
     const onScroll = () => {
-      const y = window.scrollY
-      if (isHome) {
-        setPinned(y > window.innerHeight * 0.75)
-      } else {
+      if (!darkTop) {
         setPinned(true)
+        return
       }
+      const bottom = darkTop.getBoundingClientRect().bottom
+      setPinned(bottom < 120)
     }
+
     onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [isHome])
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", onScroll)
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
+    }
+  }, [pathname])
 
   useEffect(() => {
     if (!menuOpen) return
     const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    document.body.style.overflow = "hidden"
 
-    // Focus close button on open
-    setTimeout(() => closeBtnRef.current?.focus(), 50)
-
+    const t = setTimeout(() => closeBtnRef.current?.focus(), 50)
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false)
+      if (e.key === "Escape") setMenuOpen(false)
     }
-    window.addEventListener('keydown', onKey)
+    window.addEventListener("keydown", onKey)
     return () => {
+      clearTimeout(t)
       document.body.style.overflow = prevOverflow
-      window.removeEventListener('keydown', onKey)
+      window.removeEventListener("keydown", onKey)
     }
   }, [menuOpen])
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/'
-    return pathname.startsWith(href)
-  }
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href)
 
   return (
     <>
-      <nav className={`nav${pinned ? ' nav--pinned' : ''}`}>
-        <Link className="nav__brand" href="/" aria-label="Amari Wellness Homepage">
-          <img className="nav__lockup" src={logoSvg} alt="Amari Wellness" />
+      <nav
+        className={`nav ${pinned ? "nav--pinned" : "nav--over"}`}
+        aria-label="Primary"
+      >
+        <Link className="nav__brand" href="/" aria-label="Amari — home">
+          <img className="nav__lockup" src={logoSvg} alt="Amari" />
         </Link>
 
         <div className="nav__links">
-          {NAV_LINKS.map(({ label, href, isPrimary }) => (
+          {NAV_LINKS.map(({ label, href }) => (
             <Link
               key={label}
-              className={`nav__link${isPrimary ? ' nav__link--cta' : ''}`}
+              className="nav__link"
               href={href}
-              aria-current={isActive(href) ? 'page' : undefined}
+              aria-current={isActive(href) ? "page" : undefined}
             >
               {label}
             </Link>
           ))}
+          <Link
+            className="nav__link nav__link--cta"
+            href="/book"
+            aria-current={isActive("/book") ? "page" : undefined}
+          >
+            Book
+          </Link>
         </div>
 
-        <button
-          className="nav__toggle"
-          onClick={() => setMenuOpen(true)}
-          aria-label="Open menu"
-          aria-expanded={menuOpen}
-        >
-          <span />
-          <span />
-        </button>
+        <div className="nav__actions">
+          {}
+          <Link className="nav__book-mobile" href="/book">
+            Book
+          </Link>
+          <button
+            className="nav__toggle"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+          >
+            <span />
+            <span />
+          </button>
+        </div>
       </nav>
 
       {menuOpen && (
@@ -104,11 +132,15 @@ export default function Nav() {
           className="menu"
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation Menu"
+          aria-label="Navigation"
         >
           <div className="menu__header">
-            <Link href="/" onClick={() => setMenuOpen(false)}>
-              <img className="menu__logo" src={logoSvg} alt="Amari Wellness" style={{ height: '32px' }} />
+            <Link
+              href="/"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Amari — home"
+            >
+              <img className="menu__logo" src={logoSvg} alt="Amari" />
             </Link>
             <button
               ref={closeBtnRef}
@@ -116,7 +148,7 @@ export default function Nav() {
               onClick={() => setMenuOpen(false)}
               aria-label="Close menu"
             >
-              ×
+              &times;
             </button>
           </div>
 
@@ -124,12 +156,15 @@ export default function Nav() {
             {ALL_MOBILE_LINKS.map(({ label, href, isPrimary }) => (
               <li key={label}>
                 <Link
-                  className={`menu__link${isPrimary ? ' menu__link--highlight' : ''}`}
+                  className={`menu__link${
+                    isPrimary ? " menu__link--highlight" : ""
+                  }`}
                   href={href}
                   onClick={() => setMenuOpen(false)}
-                  aria-current={isActive(href) ? 'page' : undefined}
+                  aria-current={isActive(href) ? "page" : undefined}
                 >
                   {label}
+                  <span aria-hidden="true">&rarr;</span>
                 </Link>
               </li>
             ))}
@@ -138,7 +173,8 @@ export default function Nav() {
           <div className="menu__footer">
             <p className="menu__slogan">{SITE_CONFIG.tagline}</p>
             <p className="menu__contact-info">
-              {SITE_CONFIG.address.street} · {SITE_CONFIG.address.neighborhood}, {SITE_CONFIG.address.city}
+              {SITE_CONFIG.address.street} &middot;{" "}
+              {SITE_CONFIG.address.neighborhood}, {SITE_CONFIG.address.city}
               <br />
               {SITE_CONFIG.hours.weekdays}
               <br />
@@ -146,12 +182,13 @@ export default function Nav() {
                 href={`https://wa.me/${SITE_CONFIG.contact.whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: 'var(--ink)' }}
               >
                 WhatsApp us
               </a>
-              {' · '}
-              <a href={`tel:${SITE_CONFIG.contact.phone.replace(/[^0-9+]/g, '')}`} style={{ color: 'var(--ink)' }}>
+              {" · "}
+              <a
+                href={`tel:${SITE_CONFIG.contact.phone.replace(/[^0-9+]/g, "")}`}
+              >
                 {SITE_CONFIG.contact.phone}
               </a>
             </p>

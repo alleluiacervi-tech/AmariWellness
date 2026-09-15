@@ -1,26 +1,23 @@
-import Link from '@/components/Link'
-
-export const metadata = {
-  title: 'Page not found',
-  description: 'The page you were looking for does not exist.',
-}
+import Link from "@/components/Link"
 
 export default function NotFound() {
   return (
-    <main className="not-found" id="main-content">
-      <p className="label" style={{ color: 'var(--sage-text)' }}>
-        404 · Uncharted
+    <main className="not-found surface-deep" data-dark-top id="main-content">
+      <p className="not-found__code">Error 404</p>
+      <h1 className="not-found__title">That page doesn&apos;t exist.</h1>
+      <p className="not-found__body">
+        Either the link was wrong or we moved something. Nothing you did. The
+        chairs are still where you left them.
       </p>
-      <h1 className="not-found__title">You&apos;ve wandered off the path.</h1>
-      <p style={{ maxWidth: '44ch', fontSize: '15px', color: 'var(--ink-body)', margin: '0 0 24px', lineHeight: 1.7 }}>
-        The space you are seeking does not exist or has been relocated within the sanctuary.
-      </p>
-      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div className="not-found__actions">
         <Link className="btn btn--solid" href="/">
-          Return Home
+          Back to the homepage
         </Link>
         <Link className="tlink" href="/book">
-          Book a chair →
+          Book a chair
+          <span className="tlink__arrow" aria-hidden="true">
+            &rarr;
+          </span>
         </Link>
       </div>
     </main>
