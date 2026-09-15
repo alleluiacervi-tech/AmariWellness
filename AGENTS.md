@@ -63,7 +63,7 @@ Pages whose first screen is a dark full-bleed surface mark it with `data-dark-to
 
 ## Routing & Server/Client boundary
 
-Keep the client boundary as low (as close to the leaf) as possible: a page should only be `'use client'` if it directly uses a hook, browser API, or inline event handler — interactivity already encapsulated in a child component (e.g. `Figure`, `FadeIn`, `SessionRecommender`) doesn't require the parent page to also be a Client Component. When a page must be `'use client'` and also needs SEO `metadata`, put the `metadata` export in a sibling `layout.tsx` instead (see `src/app/contact/`), since Next.js forbids exporting `metadata` from a Client Component module. A client page reading `useSearchParams()` must be wrapped in `<Suspense>` (see `src/app/book/page.tsx`).
+Keep the client boundary as low (as close to the leaf) as possible: a page should only be `'use client'` if it directly uses a hook, browser API, or inline event handler — interactivity already encapsulated in a child component (e.g. `Figure`, `Reveal`, `SessionRecommender`) doesn't require the parent page to also be a Client Component. When a page must be `'use client'` and also needs SEO `metadata`, put the `metadata` export in a sibling `layout.tsx` instead (see `src/app/contact/`), since Next.js forbids exporting `metadata` from a Client Component module. A client page reading `useSearchParams()` must be wrapped in `<Suspense>` (see `src/app/book/page.tsx`).
 
 <!-- BEGIN:nextjs-agent-rules -->
 
