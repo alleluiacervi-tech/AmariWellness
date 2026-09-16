@@ -32,8 +32,8 @@ const u = (id: string, w: number, h: number) =>
 export const IMAGES = {
   /** Dim room, heavy curtains, a single lamp. Stands in for a private suite. */
   suiteMood: {
-    src: u('1698864551605-fab9fed03af5', 900, 700),
-    alt: 'A dimly lit room with heavy curtains and a single desk lamp',
+    src: 'https://i.pinimg.com/1200x/0f/23/08/0f230884ad00adbbdb7481987df97c53.jpg',
+    alt: 'Automated massage chair in a private wellness room',
   },
 
   /** Library shelving under warm bulbs. */
