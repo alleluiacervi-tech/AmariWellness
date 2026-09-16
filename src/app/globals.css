@@ -218,6 +218,8 @@ img { max-width: 100%; display: block; }
 
 /* ─── Media ─── */
 .figure { position: relative; width: 100%; overflow: hidden; }
+.figure img { transition: transform 900ms var(--ease), opacity 600ms var(--ease); }
+.figure:hover img { transform: scale(1.018); }
 .figure--wide .figure { aspect-ratio: 3 / 2; }
 .figure--tall .figure { aspect-ratio: 4 / 5; }
 .figure--locker { width: min(100%, 420px); justify-self: center; }
@@ -272,6 +274,10 @@ img { max-width: 100%; display: block; }
 .rise { animation: rise var(--d-slow) var(--ease) both; }
 .rise--1 { animation-delay: 120ms; }
 .rise--2 { animation-delay: 240ms; }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 700ms var(--ease), transform 700ms var(--ease); }
+.reveal.is-visible { opacity: 1; transform: none; }
+.hero__media img { animation: hero-settle 1200ms var(--ease) both; }
+@keyframes hero-settle { from { opacity: 0; transform: scale(1.035); } to { opacity: 0.4; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }

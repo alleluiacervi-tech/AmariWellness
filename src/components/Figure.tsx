@@ -56,7 +56,7 @@ export function Figure({
         style={{
           objectFit: "cover",
           opacity: loaded || eager ? 1 : 0,
-          transition: "opacity 600ms var(--ease)",
+          transition: "transform 900ms var(--ease), opacity 600ms var(--ease)",
         }}
       />
     </div>
