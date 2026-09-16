@@ -38,8 +38,8 @@ export const IMAGES = {
 
   /** Library shelving under warm bulbs. */
   lounge: {
-    src: u('1481627834876-b7833e8f5570', 900, 700),
-    alt: 'Library shelving lit by warm hanging bulbs',
+    src: 'https://i.pinimg.com/736x/33/a1/63/33a163956b40be55e0774b7a366b5c53.jpg',
+    alt: 'A quiet library interior with warm shelving and seating',
   },
 
   /** Tan leather armchair, woven side table, afternoon sun. */
