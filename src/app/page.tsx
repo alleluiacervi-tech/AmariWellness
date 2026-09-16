@@ -157,7 +157,7 @@ export default function HomePage() {
       {/* ── THE PHONE QUESTION ── */}
       <section className="surface-dim" aria-label="Phones and lockers">
         <div className="wrap sec grid-2" style={{ alignItems: "center" }}>
-          <div className="figure--tall">
+          <div className="figure--tall figure--locker">
             <Figure {...IMAGES.readingLamp} sizes="(min-width: 960px) 50vw, 100vw" />
           </div>
           <Reveal className="stack">

@@ -220,6 +220,7 @@ img { max-width: 100%; display: block; }
 .figure { position: relative; width: 100%; overflow: hidden; }
 .figure--wide .figure { aspect-ratio: 3 / 2; }
 .figure--tall .figure { aspect-ratio: 4 / 5; }
+.figure--locker { width: min(100%, 420px); justify-self: center; }
 
 /* ─── Booking ─── */
 .book { display: flex; flex-wrap: wrap; gap: clamp(28px, 4vw, 64px); align-items: flex-start; padding-top: clamp(32px, 4vw, 52px); }
