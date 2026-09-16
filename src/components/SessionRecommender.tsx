@@ -1,126 +1,55 @@
-"use client" /* Always shows a recommendation. An empty result panel left a
-          third of the section as dead space and hid what the tool does. */
+"use client"
 
 import { useState } from "react"
 import Link from "@/components/Link"
-import { SESSIONS, PARTNER_SESSIONS } from "@/data/sessions"
+import { SESSIONS } from "@/data/sessions"
 
-const TIME_OPTIONS = [
-  { id: "15", label: "15 minutes" },
-  { id: "30", label: "30 minutes" },
-  { id: "60", label: "An hour" },
-  { id: "partner", label: "Coming with someone" },
+const OPTIONS = [
+  { id: "quick", label: "A lunch break", meta: "15 MIN" },
+  { id: "half", label: "A weekday evening", meta: "30 MIN" },
+  { id: "full", label: "A proper stop", meta: "60 MIN" },
 ]
 
-const FOCUS_OPTIONS = [
-  { id: "neck", label: "Neck & shoulders" },
-  { id: "back", label: "Whole back" },
-  { id: "mind", label: "My head, mostly" },
-]
-
-const REASONS: Record<string, string> = {
-  quick:
-    "Short and targeted at the top of your spine — it fits in a lunch break and still makes a difference.",
-  half: "Full body, long enough to properly switch off, short enough for a weekday evening. Where most people start.",
-  full: "The longest programme, with the stretch sequence at the end. Book it when you have decided to actually stop.",
-  "partner-30":
-    "Two private rooms side by side, running at the same time. You each set your own programme.",
-}
-
-export function SessionRecommender() {
-  const [time, setTime] = useState<string | null>(null)
-  const [focus, setFocus] = useState<string | null>(null)
-
-  function recommend() {
-    if (time === "partner") return PARTNER_SESSIONS[0]
-    if (time === "15" || (focus === "neck" && time !== "60")) return SESSIONS[0]
-    if (time === "60" || focus === "mind") return SESSIONS[2]
-    return SESSIONS[1]
-  }
-
-  const rec = recommend()
-  const answered = Boolean(time || focus)
+export default function SessionRecommender() {
+  const [picked, setPicked] = useState<string | null>(null)
+  const result = SESSIONS.find((s) => s.id === picked)
 
   return (
-    <div className="recommender">
-      <div className="shead">
-        <p className="label">Not sure which</p>
-        <h2 className="shead__title">Two questions, and we will tell you.</h2>
+    <div className="rail">
+      <div className="rail__label">
+        <p className="label">Which one</p>
       </div>
+      <div className="rail__body stack" style={{ gap: 28 }}>
+        <h2 className="h2">How long have you actually got?</h2>
+        <div className="grid-3" style={{ gap: 12 }}>
+          {OPTIONS.map((o) => (
+            <button
+              key={o.id}
+              className="choice"
+              aria-pressed={picked === o.id}
+              onClick={() => setPicked(o.id)}
+              style={{ flexDirection: "column", alignItems: "flex-start", minHeight: 96 }}
+            >
+              <span className="data">{o.meta}</span>
+              <span className="h3">{o.label}</span>
+            </button>
+          ))}
+        </div>
 
-      <div className="recommender-steps">
-        <div>
-          <span className="recommender-step-label" id="rec-time">
-            How much time do you have?
-          </span>
-          <div
-            className="recommender-options"
-            role="group"
-            aria-labelledby="rec-time"
-          >
-            {TIME_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                aria-pressed={time === opt.id}
-                className={`recommender-btn${
-                  time === opt.id ? " recommender-btn--selected" : ""
-                }`}
-                onClick={() => setTime(opt.id)}
-              >
-                {opt.label}
-              </button>
-            ))}
+        {result && (
+          <div className="surface-dark rise" style={{ padding: 30, display: "flex", flexWrap: "wrap", gap: 24, justifyContent: "space-between", alignItems: "flex-end" }}>
+            <div style={{ flex: "1 1 320px" }}>
+              <p className="label">We would book you</p>
+              <h3 className="h2" style={{ margin: "8px 0 10px" }}>{result.name}</h3>
+              <p className="meta" style={{ maxWidth: "48ch" }}>{result.suits}</p>
+            </div>
+            <div className="stack" style={{ gap: 14, alignItems: "flex-start" }}>
+              <span className="data--lg">{result.price}</span>
+              <Link className="btn" href={`/book?session=${result.id}`}>Book it</Link>
+            </div>
           </div>
-        </div>
-
-        <div>
-          <span className="recommender-step-label" id="rec-focus">
-            What is bothering you?
-          </span>
-          <div
-            className="recommender-options"
-            role="group"
-            aria-labelledby="rec-focus"
-          >
-            {FOCUS_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                aria-pressed={focus === opt.id}
-                className={`recommender-btn${
-                  focus === opt.id ? " recommender-btn--selected" : ""
-                }`}
-                onClick={() => setFocus(opt.id)}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {}
-      <div className="recommender-result" role="status" aria-live="polite">
-        <div>
-          <p className="label">
-            {answered ? "Book this one" : "Where most people start"}
-          </p>
-          <h3 className="recommender-result-name">{rec.name}</h3>
-          <p className="recommender-result-meta">
-            {rec.duration} &middot; {rec.price}
-          </p>
-          <p className="recommender-result-desc">{REASONS[rec.id]}</p>
-        </div>
-        <Link href={`/book?session=${rec.id}`} className="btn btn--solid">
-          Book it
-          <span className="tlink__arrow" aria-hidden="true">
-            &rarr;
-          </span>
-        </Link>
+        )}
       </div>
     </div>
   )
 }
-
-export default SessionRecommender

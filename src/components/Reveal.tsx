@@ -10,15 +10,18 @@
  */
 
 import { useEffect, useRef } from "react"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 export default function Reveal({
   children,
   className = "",
   as: Tag = "div",
+  style,
 }: {
   children: ReactNode
   className?: string
   as?: "div" | "section"
+  /** Needed where a revealed block also sets grid `order` to flip a row. */
+  style?: CSSProperties
 }) {
   const ref = useRef<HTMLDivElement>(null)
 

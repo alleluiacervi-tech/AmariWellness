@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
-import { DM_Sans, DM_Mono, Lora } from "next/font/google"
+import { DM_Sans, DM_Mono, Instrument_Serif } from "next/font/google"
 import Nav from "@/components/Nav"
 import Footer from "@/components/Footer"
 import "./globals.css"
@@ -13,9 +13,7 @@ const dmSans = DM_Sans({
   display: "swap",
 })
 
-/* The machine's voice: durations, prices, times, reference codes.
-   DM Mono is DM Sans's own companion, so the two sit together
-   without a seam. */
+/* The machine's voice: durations, prices, times, reference codes. */
 const dmMono = DM_Mono({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
@@ -23,11 +21,13 @@ const dmMono = DM_Mono({
   display: "swap",
 })
 
-const lora = Lora({
+/* The room's voice. Replaces Lora: tighter, larger for the same space,
+   and it holds its character at display size. */
+const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400"],
   style: ["normal", "italic"],
-  variable: "--font-lora",
+  variable: "--font-instrument-serif",
   display: "swap",
 })
 
@@ -60,7 +60,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${dmMono.variable} ${lora.variable}`}
+      className={`${dmSans.variable} ${dmMono.variable} ${instrumentSerif.variable}`}
     >
       <body>
         <a className="skip-link" href="#main-content">

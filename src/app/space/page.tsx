@@ -1,201 +1,85 @@
-import Link from "@/components/Link"
-import Reveal from "@/components/Reveal"
-import Accordion from "@/components/Accordion"
-import LocationCard from "@/components/LocationCard"
 import Figure from "@/components/Figure"
-import { SPACE_FAQS, HYGIENE_PROTOCOL, SHELF } from "@/data/site"
+import Faq from "@/components/Faq"
+import { SHELF, SPACE_FAQS } from "@/data/site"
 import { IMAGES } from "@/data/images"
 
 export const metadata = {
-  title: "The Space",
+  title: "The space & the shelf",
   description:
-    "Private automated massage suites and a small quiet reading room in Kimihurura, Kigali. What the rooms are like, and how they are kept.",
+    "Four private suites, one quiet reading room, and a shelf that changes every month. No music.",
 }
-
-const KEEP = [
-  "Silence in the lounge — no calls, no speaker audio",
-  "Every suite private, locked from the inside",
-  "Fifteen minutes of turnover between every guest",
-  "Free parking on site, eight spaces",
-  "Tea, still water, and no bill for either",
-]
-
-const NOT = [
-  "Touch you — there is no therapist here at all",
-  "Play music, or run screens anywhere in the building",
-  "Ask you to leave when your session ends",
-  "Take your phone off you, or comment on it either way",
-  "Sell you anything once you are inside",
-]
 
 export default function SpacePage() {
   return (
     <main id="main-content">
-      {/* ── HERO — runs under the transparent nav, full bleed ── */}
-      <section className="space-hero" data-dark-top aria-label="The space">
-        <div className="space-hero__media">
-          <Figure {...IMAGES.architecture} eager sizes="100vw" />
+      <section className="hero surface-deep" data-dark-top style={{ minHeight: "min(64vh, 620px)" }}>
+        <div className="hero__media">
+          <img src={IMAGES.timberRoom.src} alt={IMAGES.timberRoom.alt} style={{ opacity: 0.5 }} />
         </div>
-        <div className="space-hero__scrim" />
-        <div className="space-hero__title">
-          <p className="label" style={{ color: "var(--sage)" }}>
-            The space
-          </p>
-          <h1>
-            Two rooms.
-            <br />
-            One of them is yours alone.
-          </h1>
+        <div className="hero__scrim" />
+        <div className="hero__inner" style={{ paddingBlock: "clamp(80px, 12vh, 140px) clamp(40px, 6vh, 64px)" }}>
+          <div className="hero__body">
+            <p className="label">The space · Kimihurura</p>
+            <h1 className="display" style={{ marginTop: 18, maxWidth: "22ch" }}>
+              Four suites, one quiet room, no music.
+            </h1>
+          </div>
         </div>
       </section>
 
-      {/* ── INTRO ── */}
-      <section className="space-intro surface-paper">
-        <Reveal className="space-intro__grid">
-          <p className="space-intro__lead">
-            There is the suite, which is private and locked, and there is the
-            lounge, which is shared and silent.
-          </p>
-          <div>
-            <p className="space-intro__body">
-              The suite is a small room with one chair in it. You go in, close
-              the door, and nobody else comes in until you leave. There is no
-              attendant, no therapist, and no window onto the corridor. It is
-              about as private as a room in a public building can be.
+      <section className="surface-paper">
+        <div className="wrap sec grid-2" style={{ alignItems: "start" }}>
+          <div className="stack">
+            <p className="label">The reading room</p>
+            <h2 className="h2">A second room, for after.</h2>
+            <p className="body">
+              Low light, deep chairs, tea poured without being asked for. No clock on the wall and
+              nobody waiting for your seat. Quiet laptop work is fine; calls and video meetings are
+              the one thing we protect.
             </p>
-            <p className="space-intro__body" style={{ marginBottom: 0 }}>
-              The lounge is the other half. A shelf, a few chairs, daylight,
-              tea, and no music playing. It is included with every session and
-              there is no time limit on it. People read, or write, or sit and do
-              nothing at all — which is harder than it sounds and rather the
-              point.
+            <p className="body">
+              Lounge access comes with every session and has no time limit. We also keep a few
+              seats for people who only want the quiet — ask at reception.
             </p>
           </div>
-        </Reveal>
-      </section>
-
-      {/* ── ROOMS ── */}
-      <section className="rooms-gallery surface-paper" aria-label="The rooms">
-        <div className="rooms-gallery__cell">
-          <Figure
-            {...IMAGES.quietRoom}
-            sizes="(min-width: 760px) 33vw, 100vw"
-          />
-          <p className="rooms-gallery__name">A suite</p>
-        </div>
-        <div className="rooms-gallery__cell">
-          <Figure {...IMAGES.shelves} sizes="(min-width: 760px) 33vw, 100vw" />
-          <p className="rooms-gallery__name">The shelf</p>
-        </div>
-        <div className="rooms-gallery__cell">
-          <Figure
-            {...IMAGES.loungeChair}
-            sizes="(min-width: 760px) 33vw, 100vw"
-          />
-          <p className="rooms-gallery__name">The lounge</p>
+          <div className="figure--tall">
+            <Figure {...IMAGES.loungeChair} sizes="(min-width: 960px) 50vw, 100vw" />
+          </div>
         </div>
       </section>
 
-      {/* ── HYGIENE ── */}
-      <section
-        className="hygiene surface-dark"
-        aria-label="How the rooms are kept"
-      >
-        <Reveal className="shead">
-          <p className="label">Between guests</p>
-          <h2 className="shead__title">
-            Someone sat here before you. Here is exactly what happened next.
-          </h2>
-          <p className="shead__intro">
-            This is the question nobody asks out loud, so we will answer it
-            without being asked.
-          </p>
-        </Reveal>
-        <div className="hygiene__grid">
-          {HYGIENE_PROTOCOL.map(({ label, detail }) => (
-            <div key={label} className="hygiene__item">
-              <h3 className="hygiene__label">{label}</h3>
-              <p className="hygiene__detail">{detail}</p>
+      <section className="surface-dark">
+        <div className="wrap sec rail">
+          <div className="rail__label stack" style={{ flex: "1 1 340px" }}>
+            <p className="label">The shelf</p>
+            <h2 className="h2">Changed each month. Nothing is for sale.</h2>
+            <p className="meta" style={{ maxWidth: "46ch" }}>{SHELF.note}</p>
+          </div>
+          <ul className="rail__body" style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {SHELF.titles.map((b) => (
+              <li key={b.title} style={{ borderTop: "1px solid var(--s-rule)", padding: "16px 0", display: "flex", flexWrap: "wrap", gap: "8px 16px", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span className="h3" style={{ fontFamily: "var(--font-serif)", fontSize: 21 }}>{b.title}</span>
+                <span className="data" style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--s-meta)" }}>{b.author}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="surface-paper">
+        <div className="wrap sec--tight" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+          {[IMAGES.quietRoom, IMAGES.windowSeat, IMAGES.shelves].map((img) => (
+            <div key={img.src} className="figure--tall">
+              <Figure {...img} sizes="(min-width: 960px) 33vw, 100vw" />
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── THE SHELF ── */}
-      <section className="shelf surface-paper" aria-label="The shelf">
-        <Reveal className="shead">
-          <p className="label">On the shelf</p>
-          <h2 className="shead__title">A small, deliberate library.</h2>
-          <p className="shead__intro">{SHELF.note}</p>
-        </Reveal>
-        <ul className="shelf__list">
-          {SHELF.titles.map(({ title, author }) => (
-            <li key={title} className="shelf__item">
-              <span className="shelf__book">{title}</span>
-              <span className="shelf__author">{author}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* ── HOUSE RULES — a manifesto, set like one ── */}
-      <section className="rules surface-dim" aria-label="House rules">
-        <Reveal className="shead">
-          <p className="label">The house</p>
-          <h2 className="shead__title">
-            What we keep, and what we refuse to do.
-          </h2>
-        </Reveal>
-        <div className="rules__grid">
-          <div className="rules__col">
-            <p className="rules__head">What we keep</p>
-            <ul className="rules__list">
-              {KEEP.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rules__col rules__col--not">
-            <p className="rules__head">What we do not do</p>
-            <ul className="rules__list">
-              {NOT.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
+      <section className="surface-dim">
+        <div className="wrap sec--tight">
+          <Faq items={SPACE_FAQS} label="The room, asked about" />
         </div>
-      </section>
-
-      {/* ── FAQ ── */}
-      <section className="faq surface-paper" aria-labelledby="space-faq">
-        <div className="faq__inner">
-          <div className="faq__grid">
-            <div>
-              <p className="label">Questions</p>
-              <h2
-                className="shead__title"
-                id="space-faq"
-                style={{ marginTop: "14px" }}
-              >
-                About the rooms.
-              </h2>
-            </div>
-            <Accordion items={SPACE_FAQS} />
-          </div>
-        </div>
-      </section>
-
-      {/* ── LOCATION ── */}
-      <LocationCard />
-
-      <section className="band" aria-label="Book">
-        <p>
-          The suites are quietest in the middle of the weekday, and cost less
-          then.
-        </p>
-        <Link className="btn btn--outline-light" href="/book">
-          Book a chair
-        </Link>
       </section>
     </main>
   )
