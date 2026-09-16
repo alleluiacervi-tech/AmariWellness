@@ -217,8 +217,9 @@ img { max-width: 100%; display: block; }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; margin-top: 34px; }
 
 /* ─── Media ─── */
-.figure--wide img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
-.figure--tall img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+.figure { position: relative; width: 100%; overflow: hidden; }
+.figure--wide .figure { aspect-ratio: 3 / 2; }
+.figure--tall .figure { aspect-ratio: 4 / 5; }
 
 /* ─── Booking ─── */
 .book { display: flex; flex-wrap: wrap; gap: clamp(28px, 4vw, 64px); align-items: flex-start; padding-top: clamp(32px, 4vw, 52px); }

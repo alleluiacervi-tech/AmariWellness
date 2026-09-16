@@ -50,7 +50,7 @@ export const IMAGES = {
 
   /** Curved timber panelling and concealed lighting. */
   architecture: {
-    src: u('1616818400884-1c4f3d4d003c', 1800, 1000),
+    src: `${u('1616818400884-1c4f3d4d003c', 1800, 1000)}&v=2`,
     alt: 'A curved timber-panelled interior with concealed lighting',
   },
 
