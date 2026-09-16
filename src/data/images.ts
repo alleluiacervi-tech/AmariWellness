@@ -54,10 +54,10 @@ export const IMAGES = {
     alt: 'A curved timber-panelled interior with concealed lighting',
   },
 
-  /** Plywood chair, small stack of books, focused wall lamp. */
+  /** Locker for storing a phone before a session. */
   readingLamp: {
-    src: u('1637520943049-648cec6c18d5', 900, 700),
-    alt: 'A wooden chair holding a small stack of books beneath a wall lamp',
+    src: 'https://i.pinimg.com/736x/5f/75/15/5f751580c08dfa6db52ce4c21a553cff.jpg',
+    alt: 'A locker for storing a phone before a massage session',
   },
 
   /** Rust armchair in an alcove, open window onto trees. */
