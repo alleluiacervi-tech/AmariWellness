@@ -24,7 +24,7 @@ export default function HomePage() {
       {/* ── HERO — the room is dim; so is this ── */}
       <section className="hero surface-deep" data-dark-top aria-label="Introduction">
         <div className="hero__media">
-          <img src={IMAGES.architecture.src} alt={IMAGES.architecture.alt} />
+          <img src={IMAGES.suiteMood.src} alt={IMAGES.suiteMood.alt} />
         </div>
         <div className="hero__scrim" />
         <div className="hero__inner">
