@@ -40,6 +40,17 @@ export default function HomePage() {
   return (
     <main id="main-content" className="home surface-paper">
       <section className="welcome wrap" aria-labelledby="welcome-title">
+        <div className="welcome__visual">
+          <Figure
+            {...IMAGES.suiteMood}
+            eager
+            sizes="(max-width: 620px) 100vw, (max-width: 1320px) 48vw, 600px"
+          />
+          <div className="welcome__caption">
+            <span>YOUR SPACE TO UNWIND</span>
+            <span>01 / AMARI</span>
+          </div>
+        </div>
         <div className="welcome__copy">
           <p className="label welcome__eyebrow">
             <span aria-hidden="true" /> A moment of calm in Kigali
@@ -70,17 +81,6 @@ export default function HomePage() {
             <span>
               {SITE_CONFIG.address.neighborhood}, {SITE_CONFIG.address.city}
             </span>
-          </div>
-        </div>
-        <div className="welcome__visual">
-          <Figure
-            {...IMAGES.suiteMood}
-            eager
-            sizes="(min-width: 900px) 50vw, 100vw"
-          />
-          <div className="welcome__caption">
-            <span>YOUR SPACE TO UNWIND</span>
-            <span>01 / AMARI</span>
           </div>
         </div>
       </section>
