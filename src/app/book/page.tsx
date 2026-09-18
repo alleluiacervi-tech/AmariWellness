@@ -2,9 +2,9 @@ import { Suspense } from "react"
 import BookingFlow from "@/components/BookingFlow"
 
 export const metadata = {
-  title: "Book a chair",
+  title: "Book a session",
   description:
-    "Choose a programme, a day and a time. Paid when you book, free cancellation up to four hours before.",
+    "Explore the Amari booking experience. Choose your session, day, time, and payment method in this interactive preview.",
 }
 
 export default function BookPage() {

@@ -1,200 +1,352 @@
 "use client"
 
-/* Three steps — programme, day & time, pay — with a sticky summary that
-   fills in as you go, and a confirmation state. Gold marks machine data
-   (prices, slot times), never the primary button. */
-
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "@/components/Link"
-import { SESSIONS, OFF_PEAK } from "@/data/sessions"
-import { SITE_CONFIG } from "@/data/site"
+import Bloom from "@/components/Bloom"
+import PaymentMethods from "@/components/PaymentMethods"
+import { SESSIONS } from "@/data/sessions"
 
-const DAYS = [
-  { dow: "Mon", date: "14" },
-  { dow: "Tue", date: "15" },
-  { dow: "Wed", date: "16" },
-  { dow: "Thu", date: "17" },
-  { dow: "Fri", date: "18" },
-  { dow: "Sat", date: "19" },
-  { dow: "Sun", date: "20" },
-]
-
-/* Slot availability is mock data until the booking system is wired up. */
-const SLOTS = [
-  { time: "10:00", note: "quiet", taken: false },
-  { time: "10:45", note: "quiet", taken: false },
-  { time: "11:30", note: "quiet", taken: true },
-  { time: "12:15", note: "quiet", taken: false },
-  { time: "13:00", note: "quiet", taken: false },
-  { time: "14:30", note: "quiet", taken: false },
-  { time: "15:15", note: "quiet", taken: true },
-  { time: "16:00", note: "", taken: false },
-  { time: "17:00", note: "", taken: false },
-  { time: "17:45", note: "", taken: true },
-  { time: "18:30", note: "", taken: false },
-  { time: "19:15", note: "", taken: false },
-  { time: "20:00", note: "last", taken: false },
-]
+const METHODS = ["MTN MoMo", "Airtel Money", "Visa", "Mastercard"]
+const dateLabel = (date: string) =>
+  new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T12:00:00Z`))
 
 export default function BookingFlow() {
   const params = useSearchParams()
-  const initial = SESSIONS.find((s) => s.id === params.get("session"))?.id ?? "half"
-
+  const initial =
+    SESSIONS.find((s) => s.id === params.get("session"))?.id ?? "half"
   const [step, setStep] = useState(1)
   const [sessionId, setSessionId] = useState(initial)
-  const [dayIdx, setDayIdx] = useState(3)
-  const [slot, setSlot] = useState("18:30")
-  const [pay, setPay] = useState(SITE_CONFIG.payments.methods[0])
-
+  const [days, setDays] = useState<string[]>([])
+  const [date, setDate] = useState("")
+  const [slot, setSlot] = useState("")
+  const [pay, setPay] = useState(METHODS[0])
+  const [name, setName] = useState("")
+  const [phone, setPhone] = useState("")
+  const heading = useRef<HTMLHeadingElement>(null)
   const session = SESSIONS.find((s) => s.id === sessionId) ?? SESSIONS[1]
-  const day = DAYS[dayIdx]
-  const offPeak = SLOTS.find((s) => s.time === slot)?.note === "quiet"
+  const weekend = date
+    ? [0, 6].includes(new Date(`${date}T12:00:00Z`).getUTCDay())
+    : false
+  const offPeak = Boolean(slot && !weekend && Number(slot.slice(0, 2)) < 16)
   const total = offPeak ? session.offPeakPrice : session.price
-  const ref = `AMR-8${1200 + dayIdx * 7 + session.durationMinutes}`
+  const slots = Array.from({ length: 12 }, (_, i) => i + (weekend ? 9 : 10))
+    .filter(
+      (hour) =>
+        hour * 60 + session.durationMinutes + 15 <= (weekend ? 20 : 21) * 60,
+    )
+    .map((hour) => `${String(hour).padStart(2, "0")}:00`)
 
-  const steps = [
-    { n: 1, num: "01", label: "Programme" },
-    { n: 2, num: "02", label: "Day & time" },
-    { n: 3, num: "03", label: "Pay" },
-  ]
+  useEffect(() => {
+    const today = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Africa/Kigali",
+    })
+    const dates = Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(`${today}T12:00:00Z`)
+      day.setUTCDate(day.getUTCDate() + index + 1)
+      return day.toISOString().slice(0, 10)
+    })
+    setDays(dates)
+    setDate(dates[0])
+  }, [])
+
+  function go(next: number) {
+    setStep(next)
+    requestAnimationFrame(() => heading.current?.focus())
+  }
 
   return (
-    <main id="main-content" className="surface-deep" style={{ minHeight: "calc(100vh - var(--nav-h))" }}>
-      <div className="wrap" style={{ paddingBlock: "clamp(40px, 6vw, 72px) clamp(64px, 9vw, 112px)" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid var(--s-rule)", paddingBottom: 20 }}>
-          <h1 className="h1">Book a chair</h1>
-          <div className="book__steps">
-            {steps.map((s) => (
-              <button
-                key={s.n}
-                className="book__step"
-                data-state={step === s.n ? "current" : step > s.n ? "done" : "todo"}
-                onClick={() => step !== 4 && setStep(s.n)}
-              >
-                {s.num} {s.label}
-              </button>
-            ))}
-          </div>
+    <main id="main-content" className="booking-page home surface-paper">
+      <div className="wrap sec--tight">
+        <p className="label">A little time. Entirely yours.</p>
+        <div className="booking-heading">
+          <h1 className="h1">Book your quiet moment.</h1>
+          <span className="demo-badge">Interactive design preview</span>
         </div>
-
+        <p className="meta booking-demo">
+          Explore the booking experience with sample details. No reservation,
+          payment or message will be sent.
+        </p>
+        <ol className="booking-progress" aria-label="Booking progress">
+          {["Your session", "Day & time", "Details & payment"].map(
+            (label, i) => (
+              <li key={label}>
+                <button
+                  disabled={step === 4 || i + 1 > step}
+                  aria-current={step === i + 1 ? "step" : undefined}
+                  onClick={() => go(i + 1)}
+                >
+                  <span>{String(i + 1).padStart(2, "0")}</span>
+                  {label}
+                </button>
+              </li>
+            ),
+          )}
+        </ol>
         <div className="book">
-          <div className="book__main stack" style={{ gap: 24 }}>
+          <div className="book__main stack">
+            <h2 ref={heading} tabIndex={-1} className="h2 booking-step-title">
+              {
+                [
+                  "Choose your session",
+                  "Make time for yourself",
+                  "The finishing touches",
+                  "A moment to look forward to.",
+                ][step - 1]
+              }
+            </h2>
             {step === 1 && (
               <>
-                <h2 className="h2">Which programme?</h2>
-                {SESSIONS.map((s) => (
-                  <button key={s.id} className="choice" aria-pressed={s.id === sessionId} onClick={() => setSessionId(s.id)}>
-                    <span className="stack--tight">
-                      <span className="h3" style={{ fontFamily: "var(--font-serif)", fontSize: 26 }}>{s.name}</span>
-                      <span className="meta">{s.tagline}</span>
-                    </span>
-                    <span className="stack--tight" style={{ alignItems: "flex-end", gap: 4 }}>
-                      <span className="data" style={{ fontSize: 19 }}>{s.price}</span>
-                      <span className="data" style={{ fontSize: 11, color: "var(--s-meta)" }}>{s.duration}</span>
-                    </span>
-                  </button>
-                ))}
-                <button className="btn" style={{ alignSelf: "flex-start" }} onClick={() => setStep(2)}>
-                  Choose a time &rarr;
+                <p className="body">
+                  Choose the pause that fits your day. Every session includes
+                  your own suite and time in the lounge.
+                </p>
+                <div className="stack">
+                  {SESSIONS.map((s) => (
+                    <button
+                      key={s.id}
+                      className="choice booking-choice"
+                      aria-pressed={sessionId === s.id}
+                      onClick={() => {
+                        setSessionId(s.id)
+                        setSlot("")
+                      }}
+                    >
+                      <span className="stack--tight">
+                        <span className="h3">{s.name}</span>
+                        <span className="meta">
+                          {s.duration} · Private suite
+                        </span>
+                      </span>
+                      <span className="booking-choice__price">
+                        {s.price}
+                        <span aria-hidden="true">
+                          {sessionId === s.id ? "✓" : "○"}
+                        </span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <button className="btn booking-next" onClick={() => go(2)}>
+                  Choose a time <Bloom />
                 </button>
               </>
             )}
-
             {step === 2 && (
               <>
-                <h2 className="h2">Which day and time?</h2>
-                <div className="days">
-                  {DAYS.map((d, i) => (
-                    <button key={d.date} className="day" aria-pressed={i === dayIdx} onClick={() => setDayIdx(i)}>
-                      <span style={{ fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.75 }}>{d.dow}</span>
-                      <span style={{ fontSize: 17 }}>{d.date}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="stack" style={{ gap: 14, borderTop: "1px solid var(--s-rule)", paddingTop: 22 }}>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "space-between", alignItems: "baseline" }}>
-                    <p className="label">Available suites · {day.dow.toUpperCase()} {day.date} SEP</p>
-                    <p className="data">{OFF_PEAK.label.toUpperCase()} {OFF_PEAK.window} · −20%</p>
-                  </div>
-                  <div className="slots">
-                    {SLOTS.map((t) => (
-                      <button key={t.time} className="slot" aria-pressed={t.time === slot} disabled={t.taken} onClick={() => setSlot(t.time)}>
-                        <span style={{ fontSize: 15 }}>{t.time}</span>
-                        <span className="slot__note">{t.taken ? "taken" : t.note}</span>
+                <p className="meta">
+                  Sample availability · All times are Kigali time (CAT).
+                </p>
+                <fieldset className="booking-fieldset">
+                  <legend>Choose a day</legend>
+                  <div className="days">
+                    {days.map((d) => (
+                      <button
+                        key={d}
+                        className="day"
+                        aria-pressed={date === d}
+                        onClick={() => {
+                          setDate(d)
+                          setSlot("")
+                        }}
+                      >
+                        {dateLabel(d)}
                       </button>
                     ))}
                   </div>
-                </div>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <button className="btn btn--outline" onClick={() => setStep(1)}>&larr; Back</button>
-                  <button className="btn" onClick={() => setStep(3)}>Pay and confirm &rarr;</button>
+                </fieldset>
+                <fieldset className="booking-fieldset">
+                  <legend>Choose a time</legend>
+                  <div className="slots">
+                    {slots.map((time) => (
+                      <button
+                        key={time}
+                        className="slot"
+                        aria-pressed={slot === time}
+                        onClick={() => setSlot(time)}
+                      >
+                        <span>{time}</span>
+                        {!weekend && Number(time.slice(0, 2)) < 16 && (
+                          <span className="slot__note">Quiet hours</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <div className="booking-actions">
+                  <button className="btn btn--outline" onClick={() => go(1)}>
+                    Back
+                  </button>
+                  <button
+                    className="btn"
+                    disabled={!date || !slot}
+                    onClick={() => go(3)}
+                  >
+                    Your details <Bloom />
+                  </button>
                 </div>
               </>
             )}
-
             {step === 3 && (
-              <>
-                <h2 className="h2">Who is coming, and how are you paying?</h2>
-                <div className="grid-3" style={{ gap: 16 }}>
-                  <label className="field">
-                    <span className="label">Your name</span>
-                    <input type="text" placeholder="Full name" />
-                  </label>
-                  <label className="field">
-                    <span className="label">Phone (your booking record)</span>
-                    <input type="tel" placeholder="+250 7…" />
-                  </label>
-                </div>
-                <div className="stack" style={{ gap: 12, borderTop: "1px solid var(--s-rule)", paddingTop: 22 }}>
-                  <p className="label">Payment</p>
-                  {SITE_CONFIG.payments.methods.map((m) => (
-                    <button key={m} className="choice" aria-pressed={pay === m} onClick={() => setPay(m)} style={{ minHeight: 56, padding: "18px 20px" }}>
-                      <span>{m}</span>
-                      {pay === m && <span className="data">SELECTED</span>}
-                    </button>
-                  ))}
-                </div>
-                <p className="meta" style={{ maxWidth: "56ch" }}>{SITE_CONFIG.payments.note}</p>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <button className="btn btn--outline" onClick={() => setStep(2)}>&larr; Back</button>
-                  <button className="btn" onClick={() => setStep(4)}>Confirm · {total}</button>
-                </div>
-              </>
-            )}
-
-            {step === 4 && (
-              <div className="stack rise" style={{ gap: 20 }}>
-                <p className="label">Confirmed · {ref}</p>
-                <h2 className="h1" style={{ maxWidth: "24ch" }}>The suite is yours. The door locks from the inside.</h2>
-                <p className="body">
-                  We have sent the details by WhatsApp. Come five minutes early on your first
-                  visit — there is nothing to fill in at the door.
+              <form
+                className="stack"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  go(4)
+                }}
+              >
+                <p className="meta">
+                  Use sample information to try the form. Details stay on this
+                  screen only.
                 </p>
-                <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                  <Link className="btn" href="/account">See my bookings</Link>
-                  <button className="btn btn--outline" onClick={() => setStep(1)}>Book another</button>
+                <div className="booking-fields">
+                  <label className="field">
+                    <span>Name</span>
+                    <input
+                      required
+                      maxLength={80}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      autoComplete="off"
+                      placeholder="e.g. Alex Guest"
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Phone number</span>
+                    <input
+                      required
+                      type="tel"
+                      pattern={"\\+?[0-9 ]{7,20}"}
+                      maxLength={20}
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      autoComplete="off"
+                      placeholder="e.g. +250 700 000 000"
+                    />
+                  </label>
+                </div>
+                <fieldset className="booking-fieldset">
+                  <legend>Choose a payment method</legend>
+                  <div className="payment-options">
+                    {METHODS.map((method) => (
+                      <label className="payment-option" key={method}>
+                        <input
+                          type="radio"
+                          name="payment"
+                          aria-label={method}
+                          checked={pay === method}
+                          onChange={() => setPay(method)}
+                        />
+                        <PaymentMethods method={method} />
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <div className="payment-preview">
+                  <Bloom />
+                  <div>
+                    <h3>
+                      {pay === "Visa" || pay === "Mastercard"
+                        ? "Card payment preview"
+                        : "Mobile money preview"}
+                    </h3>
+                    <p>
+                      {pay === "Visa" || pay === "Mastercard"
+                        ? "A secure card checkout would open here. No card details are collected in this preview."
+                        : "A payment request would be sent to your mobile wallet. No request will be sent in this preview."}
+                    </p>
+                  </div>
+                </div>
+                <div className="booking-actions">
+                  <button
+                    type="button"
+                    className="btn btn--outline"
+                    onClick={() => go(2)}
+                  >
+                    Back
+                  </button>
+                  <button className="btn" type="submit">
+                    Preview confirmation <Bloom />
+                  </button>
+                </div>
+              </form>
+            )}
+            {step === 4 && (
+              <div className="stack booking-confirmation" role="status">
+                <span className="booking-confirmation__bloom">
+                  <Bloom />
+                </span>
+                <p className="lead">
+                  Thank you, {name.trim() || "guest"}. Here’s how your session
+                  confirmation will look.
+                </p>
+                <p className="body">
+                  {session.name} · {dateLabel(date)} at {slot}
+                  <br />
+                  {session.duration} · {total} · {pay}
+                </p>
+                <p className="meta">
+                  Preview complete. No booking was made, no payment was taken,
+                  and no notification was sent.
+                </p>
+                <div className="booking-actions">
+                  <Link className="btn" href="/">
+                    Back to Amari <Bloom />
+                  </Link>
+                  <button
+                    className="btn btn--outline"
+                    onClick={() => {
+                      setName("")
+                      setPhone("")
+                      setSlot("")
+                      go(1)
+                    }}
+                  >
+                    Try another session
+                  </button>
                 </div>
               </div>
             )}
           </div>
-
-          <aside className="book__aside">
-            <p className="label">Your booking</p>
-            <h3 className="h2" style={{ fontSize: 29 }}>{session.name}</h3>
-            <dl className="stack--tight" style={{ margin: 0, borderTop: "1px solid var(--s-rule)", paddingTop: 16 }}>
-              <div className="summary__row"><dt>DURATION</dt><dd>{session.duration}</dd></div>
-              <div className="summary__row"><dt>DAY</dt><dd>{day.dow.toUpperCase()} {day.date} SEP</dd></div>
-              <div className="summary__row"><dt>TIME</dt><dd>{slot}</dd></div>
-              <div className="summary__row"><dt>SUITE</dt><dd>PRIVATE · 1 PERSON</dd></div>
-              <div className="summary__row"><dt>TURNOVER</dt><dd>+15 MIN RESERVED</dd></div>
+          <aside
+            className="book__aside booking-summary"
+            aria-label="Session summary"
+          >
+            <p className="label">Your moment of calm</p>
+            <h2 className="h3">{session.name}</h2>
+            <dl className="stack--tight">
+              <div className="summary__row">
+                <dt>Duration</dt>
+                <dd>{session.duration}</dd>
+              </div>
+              <div className="summary__row">
+                <dt>Date</dt>
+                <dd>{date ? dateLabel(date) : "Choose a day"}</dd>
+              </div>
+              <div className="summary__row">
+                <dt>Time</dt>
+                <dd>{slot || "Choose a time"}</dd>
+              </div>
+              <div className="summary__row">
+                <dt>Space</dt>
+                <dd>Private suite · 1 guest</dd>
+              </div>
             </dl>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, borderTop: "1px solid var(--s-rule-2)", paddingTop: 16 }}>
-              <span className="label">Total</span>
-              <span className="data--lg">{total}</span>
+            <div className="booking-total">
+              <span>Session total</span>
+              <strong>{total}</strong>
             </div>
-            {offPeak && <p className="label">Quiet-hours rate applied · −20%</p>}
-            <p className="meta">{SITE_CONFIG.address.full} · {SITE_CONFIG.address.plusCode}. {SITE_CONFIG.address.parking}.</p>
+            {offPeak && <p className="meta">Quiet-hours rate applied.</p>}
+            <p className="meta">
+              Lounge access included. Fifteen minutes reserved between sessions
+              to prepare your suite.
+            </p>
+            <span className="demo-badge">Sample booking · No charge</span>
           </aside>
         </div>
       </div>
