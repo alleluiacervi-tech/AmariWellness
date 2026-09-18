@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import PaymentMethods from "@/components/PaymentMethods"
 import Link from "@/components/Link"
 import { SITE_CONFIG } from "@/data/site"
 
@@ -37,7 +38,7 @@ const COLUMNS = [
 ]
 
 export default function Footer() {
-  const { address, contact, hours, payments } = SITE_CONFIG
+  const { address, contact, hours } = SITE_CONFIG
   const pathname = usePathname()
 
   if (pathname.startsWith("/book")) {
@@ -103,9 +104,7 @@ export default function Footer() {
 
         <div className="footer__base">
           <span className="label">We accept</span>
-          <span className="data">
-            {payments.methods.join(" · ").toUpperCase()}
-          </span>
+          <PaymentMethods />
         </div>
         <div className="footer__base">
           <span>

@@ -1,4 +1,6 @@
+import Bloom from "@/components/Bloom"
 import Link from "@/components/Link"
+import Reveal from "@/components/Reveal"
 import Figure from "@/components/Figure"
 import { SESSIONS } from "@/data/sessions"
 import { SITE_CONFIG } from "@/data/site"
@@ -53,10 +55,10 @@ export default function HomePage() {
           </p>
           <div className="welcome__actions">
             <Link className="btn" href="/book">
-              Book a session <span aria-hidden="true">↗</span>
+              Book a session <Bloom />
             </Link>
             <a className="tlink" href="#the-space">
-              Explore the space <span aria-hidden="true">↓</span>
+              Explore the space <Bloom />
             </a>
           </div>
           <p className="welcome__note">
@@ -119,7 +121,7 @@ export default function HomePage() {
         aria-labelledby="sessions-title"
       >
         <div className="wrap">
-          <div className="home__section-heading">
+          <Reveal className="home__section-heading">
             <div>
               <p className="label">Make room for yourself</p>
               <h2 className="h1" id="sessions-title">
@@ -127,10 +129,10 @@ export default function HomePage() {
               </h2>
             </div>
             <Link className="tlink" href="/sessions">
-              Explore our sessions ↗
+              Explore our sessions <Bloom />
             </Link>
-          </div>
-          <div className="session-grid">
+          </Reveal>
+          <Reveal className="session-grid" stagger>
             {SESSIONS.map((session, index) => (
               <article
                 className={`session-card ${
@@ -159,16 +161,18 @@ export default function HomePage() {
                     className={index === 1 ? "btn" : "btn btn--outline"}
                     href={`/book?session=${session.id}`}
                   >
-                    Choose {session.durationMinutes} minutes{" "}
-                    <span aria-hidden="true">↗</span>
+                    Choose {session.durationMinutes} minutes <Bloom />
                   </Link>
                 </div>
               </article>
             ))}
-          </div>
+          </Reveal>
           <p className="sessions-note">
             Your own suite. Your choice of intensity. Time in the lounge
-            afterwards. <Link href="/packs">Discover session packs →</Link>
+            afterwards.{" "}
+            <Link href="/packs">
+              Discover session packs <Bloom />
+            </Link>
           </p>
         </div>
       </section>
@@ -184,7 +188,7 @@ export default function HomePage() {
             A slower rhythm, beyond your session.
           </span>
         </div>
-        <div className="space-story__copy">
+        <Reveal className="space-story__copy">
           <p className="label">The Amari feeling</p>
           <h2 className="h1" id="space-title">
             Come for the pause.
@@ -198,9 +202,9 @@ export default function HomePage() {
             few more minutes to yourself in the lounge.
           </p>
           <Link className="tlink" href="/space">
-            Get to know the space ↗
+            Get to know the space <Bloom />
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       <section
@@ -209,15 +213,15 @@ export default function HomePage() {
         aria-labelledby="visit-title"
       >
         <div className="wrap">
-          <div className="home__section-heading">
+          <Reveal className="home__section-heading">
             <div>
               <p className="label">Your first visit</p>
               <h2 className="h1" id="visit-title">
                 Easy from the moment you arrive.
               </h2>
             </div>
-          </div>
-          <div className="visit-grid">
+          </Reveal>
+          <Reveal className="visit-grid" stagger>
             {[
               {
                 title: "Choose your time",
@@ -238,7 +242,7 @@ export default function HomePage() {
                 <p className="body">{step.text}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -251,7 +255,7 @@ export default function HomePage() {
             before you arrive.
           </h2>
           <Link className="tlink" href="/contact">
-            Ask us a question ↗
+            Ask us a question <Bloom />
           </Link>
         </div>
         <div>
@@ -287,10 +291,10 @@ export default function HomePage() {
           </div>
           <div className="visit-banner__actions">
             <Link className="btn" href="/book">
-              Book a session ↗
+              Book a session <Bloom />
             </Link>
             <Link className="tlink" href="/contact">
-              Find us in Kigali ↗
+              Find us in Kigali <Bloom />
             </Link>
           </div>
         </div>

@@ -1,5 +1,7 @@
 "use client"
 
+import Bloom from "@/components/Bloom"
+
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "@/components/Link"
@@ -72,7 +74,6 @@ export default function Nav() {
         <div className="nav__inner">
           <Link className="nav__brand" href="/" aria-label="Amari — home">
             <img className="nav__lockup" src={LOGO} alt="Amari" />
-            <span className="nav__kigali">Kigali</span>
           </Link>
 
           <div className="nav__links">
@@ -118,7 +119,11 @@ export default function Nav() {
           aria-label="Navigation"
         >
           <div className="menu__header">
-            <Link href="/" aria-label="Amari — home">
+            <Link
+              href="/"
+              aria-label="Amari — home"
+              onClick={() => setMenuOpen(false)}
+            >
               <img className="menu__logo" src={LOGO} alt="Amari" />
             </Link>
             <button
@@ -140,7 +145,7 @@ export default function Nav() {
                   onClick={() => setMenuOpen(false)}
                 >
                   {label}
-                  <span aria-hidden="true">&rarr;</span>
+                  <Bloom />
                 </Link>
               </li>
             ))}

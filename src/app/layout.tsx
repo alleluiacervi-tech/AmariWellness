@@ -33,11 +33,11 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: {
-    default: "Amari — A Chair. A Quiet Room. Time to Think.",
+    default: "Amari — A little time. Entirely yours.",
     template: "%s | Amari Kigali",
   },
   description:
-    "Private automated massage suites in Kimihurura, Kigali. No therapist, no noise — you close the door yourself. Book online from 8,000 RWF.",
+    "Private automated massage suites in Kimihurura, Kigali. Make time for yourself with a session at your own pace.",
   keywords: [
     "massage chair Kigali",
     "massage Rwanda",
@@ -48,9 +48,9 @@ export const metadata: Metadata = {
     "relaxation Kigali",
   ],
   openGraph: {
-    title: "Amari — A Chair. A Quiet Room. Time to Think.",
+    title: "Amari — A little time. Entirely yours.",
     description:
-      "Private automated massage suites in Kimihurura, Kigali. No therapist, no noise. Book online.",
+      "Private automated massage suites in Kimihurura, Kigali. A little time. Entirely yours.",
     locale: "en_RW",
     type: "website",
   },

@@ -1,13 +1,6 @@
 "use client"
 
-/**
- * Reveals its children in a short stagger rather than fading the
- * whole block as one unit — the previous behaviour animated every
- * section identically, which read as a tic rather than as pacing.
- *
- * Children are visible by default if the observer never runs, so a
- * failed script or a jump-scroll can't leave the page blank.
- */
+/** Progressive enhancement: content stays visible without JavaScript or motion. */
 
 import { useEffect, useRef } from "react"
 import type { CSSProperties, ReactNode } from "react"
@@ -16,44 +9,62 @@ export default function Reveal({
   className = "",
   as: Tag = "div",
   style,
+  stagger = false,
 }: {
   children: ReactNode
   className?: string
   as?: "div" | "section"
-  /** Needed where a revealed block also sets grid `order` to flip a row. */
   style?: CSSProperties
+  stagger?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = ref.current
-    if (!el) return
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      el.classList.add("is-visible")
-      return
-    }
-
+    if (!el || !("IntersectionObserver" in window)) return
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
+    if (preference.matches) return
+    const animations: Animation[] = []
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            el.classList.add("is-visible")
-            observer.disconnect()
-          }
-        }
+        if (!entries.some((entry) => entry.isIntersecting)) return
+        observer.disconnect()
+        if (preference.matches) return
+        const targets = stagger ? Array.from(el.children) : [el]
+        targets.forEach((target, index) => {
+          animations.push(
+            target.animate(
+              [
+                { opacity: 0.35, transform: "translateY(14px)" },
+                { opacity: 1, transform: "translateY(0)" },
+              ],
+              {
+                duration: 620,
+                delay: stagger ? Math.min(index * 85, 255) : 0,
+                easing: "cubic-bezier(0.22, 0.61, 0.36, 1)",
+                fill: "backwards",
+              },
+            ),
+          )
+        })
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.01 },
+      { threshold: 0.08 },
     )
+    const stop = () => {
+      if (preference.matches)
+        animations.forEach((animation) => animation.cancel())
+    }
+    preference.addEventListener("change", stop)
     observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+    return () => {
+      observer.disconnect()
+      animations.forEach((animation) => animation.cancel())
+      preference.removeEventListener("change", stop)
+    }
+  }, [stagger])
 
   return (
-    <Tag
-      ref={ref as never}
-      className={`reveal${className ? " " + className : ""}`}
-    >
+    <Tag ref={ref as never} className={className} style={style}>
       {children}
     </Tag>
   )

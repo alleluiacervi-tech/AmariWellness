@@ -399,3 +399,51 @@ html { scroll-padding-top: calc(var(--nav-h) + 20px); }
   .welcome__actions { gap: 14px; }
   .welcome .btn { padding-inline: 22px; }
 }
+
+/* Quiet motion: a single entrance, short travel, no loops or scroll effects. */
+:root {
+  --payment-ink: #202020;
+  --payment-white: #ffffff;
+  --payment-mtn: #ffcb05;
+  --payment-airtel: #db1830;
+  --payment-visa: #1434cb;
+  --payment-mastercard-red: #eb001b;
+  --payment-mastercard-gold: #f79e1b;
+  --payment-mastercard-overlap: #ff5f00;
+}
+@keyframes welcome-in { from { opacity: 0.4; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes photo-in { from { opacity: 0.5; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: no-preference) {
+  .welcome__copy > * { animation: welcome-in 700ms var(--ease) backwards; }
+  .welcome__copy > :nth-child(2) { animation-delay: 60ms; }
+  .welcome__copy > :nth-child(3) { animation-delay: 120ms; }
+  .welcome__copy > :nth-child(n+4) { animation-delay: 180ms; }
+  .welcome__visual { animation: photo-in 900ms var(--ease) 100ms backwards; }
+  .home .btn, .nav__cta { transition: transform 220ms var(--ease), background 220ms var(--ease), box-shadow 220ms var(--ease); }
+  .home .btn > span { transition: transform 220ms var(--ease); }
+  .session-card { transition: transform 280ms var(--ease), box-shadow 280ms var(--ease), border-color 280ms var(--ease); }
+  .home-faq__item[open] > p { animation: welcome-in 260ms var(--ease); }
+  @media (hover: hover) and (pointer: fine) {
+    .home .btn:hover, .nav__cta:hover { transform: translateY(-2px); box-shadow: 0 5px 14px var(--s-rule); }
+    .home .btn:hover > span { transform: translate(2px, -2px); }
+    .session-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px var(--s-rule); border-color: var(--sage-deep); }
+  }
+  .home .btn:active, .nav__cta:active { transform: translateY(0); box-shadow: none; }
+}
+.session-card:focus-within { border-color: var(--sage-deep); }
+.payment-methods { display: flex; flex-wrap: wrap; gap: 20px 28px; list-style: none; padding: 0; margin: 0; }
+.payment-method { display: flex; gap: 9px; align-items: center; color: var(--s-body); font-size: 12px; white-space: nowrap; }
+.payment-icon { width: 54px; height: 34px; flex-shrink: 0; }
+.payment-icon--mtn { color: var(--payment-mtn); }
+.payment-icon--airtel { color: var(--payment-airtel); }
+.payment-icon--visa { color: var(--payment-visa); }
+.footer__base:has(.payment-methods) { align-items: center; padding-block: 24px; }
+@media (max-width: 540px) { .payment-methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 16px; } }
+.bloom { width: 21px; height: 21px; flex: 0 0 21px; vertical-align: middle; }
+.sessions-note .bloom { width: 16px; height: 16px; margin-left: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .bloom { transition: transform 450ms var(--ease); }
+  @media (hover: hover) and (pointer: fine) {
+    a:hover > .bloom { transform: rotate(45deg); }
+  }
+}
