@@ -68,6 +68,8 @@ export default function Nav() {
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
 
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return null
+
   return (
     <>
       <nav className="nav surface-paper" aria-label="Primary">

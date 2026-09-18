@@ -41,6 +41,8 @@ export default function Footer() {
   const { address, contact, hours } = SITE_CONFIG
   const pathname = usePathname()
 
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return null
+
   if (pathname.startsWith("/book")) {
     return (
       <footer className="footer surface-paper" role="contentinfo">
