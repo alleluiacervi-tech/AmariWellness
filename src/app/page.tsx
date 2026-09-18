@@ -1,246 +1,298 @@
 import Link from "@/components/Link"
-import Reveal from "@/components/Reveal"
 import Figure from "@/components/Figure"
-import SessionRecommender from "@/components/SessionRecommender"
-import { SESSIONS, OFF_PEAK } from "@/data/sessions"
-import { SITE_CONFIG, VISIT_STEPS, HYGIENE_PROTOCOL } from "@/data/site"
+import { SESSIONS } from "@/data/sessions"
+import { SITE_CONFIG } from "@/data/site"
 import { IMAGES } from "@/data/images"
 
 export const metadata = {
-  title: "Amari — A Chair. A Quiet Room. Time to Think.",
+  title: "Amari — A little time. Entirely yours.",
   description:
-    "Private automated massage suites in Kigali. No therapist, no appointment queue, no noise. Book a chair, close the door, and let the machine work.",
+    "Private automated massage sessions in Kimihurura, Kigali. Discover your space to unwind, explore our sessions, and make time for yourself.",
 }
 
-const FACTS = [
-  { k: "No one touches you", v: "The chair is fully automated. There is no therapist and no attendant in the room." },
-  { k: "The door locks from inside", v: "Every suite is private and yours alone for the whole session." },
-  { k: "Fifteen minutes of turnover", v: "Fresh covers and a disinfected room between every single guest." },
+const sessionCopy = [
+  "A little breathing room in a busy day. A focused neck and shoulder programme.",
+  "Time to settle in. A full-body programme with gentle warmth and a reclining chair.",
+  "Give yourself an unhurried hour. Our extended programme, followed by time in the lounge.",
+]
+const questions = [
+  {
+    q: "What is an automated massage session?",
+    a: "Your massage is delivered by the chair, in your own private suite. You can adjust the intensity using its control panel or stop the programme whenever you choose.",
+  },
+  {
+    q: "What should I wear?",
+    a: "Comfortable everyday clothing is ideal. The massage takes place through your clothes. Remove bulky items from your pockets before settling into the chair.",
+  },
+  {
+    q: "Can I keep my phone with me?",
+    a: "Of course. Keep it with you or use a locker during your session. Please keep calls and audio out of the quiet lounge.",
+  },
+  {
+    q: "How is the suite prepared?",
+    a: "Between sessions, the chair cover and headrest cloth are replaced, contact surfaces are cleaned, and the room is aired. Turnover time is reserved between bookings.",
+  },
 ]
 
 export default function HomePage() {
   return (
-    <main id="main-content">
-      {/* ── HERO — the room is dim; so is this ── */}
-      <section className="hero surface-deep" data-dark-top aria-label="Introduction">
-        <div className="hero__media">
-          <img src={IMAGES.suiteMood.src} alt={IMAGES.suiteMood.alt} />
+    <main id="main-content" className="home surface-paper">
+      <section className="welcome wrap" aria-labelledby="welcome-title">
+        <div className="welcome__copy">
+          <p className="label welcome__eyebrow">
+            <span aria-hidden="true" /> A moment of calm in Kigali
+          </p>
+          <h1 id="welcome-title">
+            A little time.
+            <br />
+            <em>Entirely yours.</em>
+          </h1>
+          <p className="lead">
+            Step out of the everyday. Settle into your own private massage
+            suite, and unwind at your pace.
+          </p>
+          <div className="welcome__actions">
+            <Link className="btn" href="/book">
+              Book a session <span aria-hidden="true">↗</span>
+            </Link>
+            <a className="tlink" href="#the-space">
+              Explore the space <span aria-hidden="true">↓</span>
+            </a>
+          </div>
+          <p className="welcome__note">
+            15, 30 or 60 minutes <span aria-hidden="true">·</span> From{" "}
+            {SESSIONS[0].price}
+          </p>
+          <div className="welcome__location">
+            <span className="label">Find your pause</span>
+            <span>
+              {SITE_CONFIG.address.neighborhood}, {SITE_CONFIG.address.city}
+            </span>
+          </div>
         </div>
-        <div className="hero__scrim" />
-        <div className="hero__inner">
-          <div className="hero__body rise">
-            <p className="label">Automated massage suites · Kigali</p>
-            <h1 className="display" style={{ marginTop: 22 }}>
-              A chair.
-              <br />A quiet room.
-              <br />Time to think.
-            </h1>
-            <p className="lead" style={{ marginTop: 26, maxWidth: "48ch" }}>
-              A private room, a machine that does the work, and nobody to talk to. You close the
-              door yourself. Fifteen minutes or a full hour — book it online and walk straight in.
-            </p>
-            <div className="hero__actions">
-              <Link className="btn" href="/book">Book a chair</Link>
-              <a className="tlink" href="#what">What actually happens &rarr;</a>
+        <div className="welcome__visual">
+          <Figure
+            {...IMAGES.suiteMood}
+            eager
+            sizes="(min-width: 900px) 50vw, 100vw"
+          />
+          <div className="welcome__caption">
+            <span>YOUR SPACE TO UNWIND</span>
+            <span>01 / AMARI</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="reassurance wrap" aria-label="The Amari experience">
+        <div>
+          <span className="reassurance__mark" aria-hidden="true">
+            01
+          </span>
+          <div>
+            <h2>Your own private suite</h2>
+            <p>A quiet space, just for you.</p>
+          </div>
+        </div>
+        <div>
+          <span className="reassurance__mark" aria-hidden="true">
+            02
+          </span>
+          <div>
+            <h2>Comfort on your terms</h2>
+            <p>Adjust the intensity at any time.</p>
+          </div>
+        </div>
+        <div>
+          <span className="reassurance__mark" aria-hidden="true">
+            03
+          </span>
+          <div>
+            <h2>Stay a little longer</h2>
+            <p>Lounge time with every session.</p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="sec surface-mist"
+        id="pricing"
+        aria-labelledby="sessions-title"
+      >
+        <div className="wrap">
+          <div className="home__section-heading">
+            <div>
+              <p className="label">Make room for yourself</p>
+              <h2 className="h1" id="sessions-title">
+                A pause for every kind of day.
+              </h2>
+            </div>
+            <Link className="tlink" href="/sessions">
+              Explore our sessions ↗
+            </Link>
+          </div>
+          <div className="session-grid">
+            {SESSIONS.map((session, index) => (
+              <article
+                className={`session-card ${
+                  index === 1 ? "session-card--featured" : ""
+                }`}
+                key={session.id}
+              >
+                <div className="session-card__top">
+                  <p className="label">
+                    {session.durationMinutes} minute session
+                  </p>
+                  {index === 1 && (
+                    <span className="session-card__badge">
+                      A good place to start
+                    </span>
+                  )}
+                </div>
+                <h3 className="h2">{session.name}</h3>
+                <p className="body">{sessionCopy[index]}</p>
+                <div className="session-card__bottom">
+                  <p className="session-card__price">
+                    {session.price}
+                    <span>per person</span>
+                  </p>
+                  <Link
+                    className={index === 1 ? "btn" : "btn btn--outline"}
+                    href={`/book?session=${session.id}`}
+                  >
+                    Choose {session.durationMinutes} minutes{" "}
+                    <span aria-hidden="true">↗</span>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+          <p className="sessions-note">
+            Your own suite. Your choice of intensity. Time in the lounge
+            afterwards. <Link href="/packs">Discover session packs →</Link>
+          </p>
+        </div>
+      </section>
+
+      <section
+        className="wrap sec space-story"
+        id="the-space"
+        aria-labelledby="space-title"
+      >
+        <div className="space-story__photo">
+          <Figure {...IMAGES.lounge} sizes="(min-width: 900px) 50vw, 100vw" />
+          <span className="space-story__caption">
+            A slower rhythm, beyond your session.
+          </span>
+        </div>
+        <div className="space-story__copy">
+          <p className="label">The Amari feeling</p>
+          <h2 className="h1" id="space-title">
+            Come for the pause.
+            <br />
+            <em>Stay for the quiet.</em>
+          </h2>
+          <p className="lead">Some time should belong to you alone.</p>
+          <p className="body">
+            A private suite, a comfortable chair, and a programme you control.
+            Afterwards, ease back into your day with a book, a cup of tea, or a
+            few more minutes to yourself in the lounge.
+          </p>
+          <Link className="tlink" href="/space">
+            Get to know the space ↗
+          </Link>
+        </div>
+      </section>
+
+      <section
+        className="surface-mist sec"
+        id="what"
+        aria-labelledby="visit-title"
+      >
+        <div className="wrap">
+          <div className="home__section-heading">
+            <div>
+              <p className="label">Your first visit</p>
+              <h2 className="h1" id="visit-title">
+                Easy from the moment you arrive.
+              </h2>
             </div>
           </div>
-
-          {/* The two questions a first visitor actually has: how long, how much. */}
-          <div className="hero__index rise rise--1">
-            <p className="label" style={{ margin: "16px 0 6px" }}>The programmes</p>
-            {SESSIONS.map((s) => (
-              <Link key={s.id} className="hero__row" href={`/book?session=${s.id}`}>
-                <span className="hero__min">{s.durationMinutes}</span>
-                <span className="hero__name">{s.name}</span>
-                <span className="hero__price">{s.price}</span>
-              </Link>
+          <div className="visit-grid">
+            {[
+              {
+                title: "Choose your time",
+                text: "Find the session that fits your day. Choose 15, 30, or 60 minutes when you book.",
+              },
+              {
+                title: "Make yourself comfortable",
+                text: "We’ll introduce you to your suite and chair. Set the intensity to your comfort, then settle in.",
+              },
+              {
+                title: "Take your time",
+                text: "Enjoy your session in privacy. Afterwards, the lounge is there whenever you’re ready.",
+              },
+            ].map((step, i) => (
+              <div key={step.title}>
+                <span className="visit-number">0{i + 1}</span>
+                <h3 className="h3">{step.title}</h3>
+                <p className="body">{step.text}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── THE THREE FACTS ── */}
-      <section className="surface-paper" style={{ borderBottom: "1px solid var(--s-rule)" }} aria-label="What to expect">
-        <div className="wrap grid-3" style={{ paddingBlock: "clamp(40px, 6vw, 64px)" }}>
-          {FACTS.map(({ k, v }) => (
-            <div key={k} className="stack--tight">
-              <h2 className="h3" style={{ fontFamily: "var(--font-serif)", fontSize: 26 }}>{k}</h2>
-              <p className="meta" style={{ fontSize: 16 }}>{v}</p>
-            </div>
+      <section className="wrap sec home-faq" aria-labelledby="faq-title">
+        <div>
+          <p className="label">A few things to know</p>
+          <h2 className="h1" id="faq-title">
+            Feel at home,
+            <br />
+            before you arrive.
+          </h2>
+          <Link className="tlink" href="/contact">
+            Ask us a question ↗
+          </Link>
+        </div>
+        <div>
+          {questions.map((item) => (
+            <details className="home-faq__item" key={item.q}>
+              <summary>
+                {item.q}
+                <span aria-hidden="true">+</span>
+              </summary>
+              <p>{item.a}</p>
+            </details>
           ))}
         </div>
       </section>
 
-      {/* ── WHAT THIS IS ── */}
-      <section className="surface-paper" aria-label="What this is">
-        <div className="wrap sec stack" style={{ gap: "var(--section)" }}>
-          <div className="grid-2" style={{ alignItems: "center" }}>
-            <div className="figure--wide">
-              <Figure {...IMAGES.suiteMood} sizes="(min-width: 960px) 50vw, 100vw" />
-            </div>
-            <Reveal className="stack">
-              <p className="label">The suites</p>
-              <h2 className="h2">A machine does the work.<br />You do nothing.</h2>
-              <p className="body">
-                The chair measures your height and shoulders, reclines you until your knees sit
-                above your heart, then works down your spine with mechanical rollers while air
-                cushions press and release through your calves and arms. Heat runs through the
-                lower back panel. You press start and close your eyes.
-              </p>
-              <p className="body">
-                If it is too firm, turn it down. If you want it to stop, press stop. Nobody is
-                watching and nobody will ask you how it was.
-              </p>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12, borderTop: "1px solid var(--s-rule)", paddingTop: 18 }}>
-                <span className="label">From</span>
-                <span className="data--lg">{SESSIONS[0].price}</span>
-                <span className="data">/ 15 min</span>
-              </div>
-              <Link className="tlink" href="/sessions">Programmes and prices &rarr;</Link>
-            </Reveal>
-          </div>
-
-          <div className="grid-2" style={{ alignItems: "center" }}>
-            <Reveal className="stack" style={{ order: 2 }}>
-              <p className="label">The lounge</p>
-              <h2 className="h2">Somewhere to sit<br />afterwards.</h2>
-              <p className="body">
-                Most people are not ready to walk back into traffic the moment the chair stops. So
-                there is a second room — a small shelf of books, a few good chairs, tea, and no
-                music. Stay ten minutes or stay until we close.
-              </p>
-              <p className="body">
-                It is included with every session. The only rule is that it stays quiet: no calls,
-                no speaker audio.
-              </p>
-              <Link className="tlink" href="/space">About the room and the shelf &rarr;</Link>
-            </Reveal>
-            <div className="figure--wide">
-              <Figure {...IMAGES.lounge} sizes="(min-width: 960px) 50vw, 100vw" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHAT ACTUALLY HAPPENS — the only sequential content on the site ── */}
-      <section className="surface-deep" id="what" aria-label="What actually happens">
-        <div className="wrap sec stack" style={{ gap: "clamp(44px, 6vw, 76px)" }}>
-          <Reveal className="rail">
-            <div className="rail__label"><p className="label">Your first visit</p></div>
-            <div className="rail__body">
-              <h2 className="h1">What actually happens.</h2>
-              <p className="lead" style={{ marginTop: 20 }}>
-                Most people have never used one of these. Here is the whole thing, start to finish,
-                with nothing left vague.
-              </p>
-            </div>
-          </Reveal>
-          <ol className="rule-grid" style={{ listStyle: "none", margin: 0, padding: 0, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
-            {VISIT_STEPS.map(({ step, title, body }) => (
-              <li key={step} className="stack--tight">
-                <span className="data">{step}</span>
-                <h3 className="h3" style={{ fontFamily: "var(--font-serif)", fontSize: 25 }}>{title}</h3>
-                <p className="meta">{body}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      {/* ── SESSION MATCHER ── */}
-      <section className="surface-paper" id="quiz">
-        <div className="wrap sec">
-          <SessionRecommender />
-        </div>
-      </section>
-
-      {/* ── THE PHONE QUESTION ── */}
-      <section className="surface-dim" aria-label="Phones and lockers">
-        <div className="wrap sec grid-2" style={{ alignItems: "center" }}>
-          <div className="figure--tall figure--locker">
-            <Figure {...IMAGES.readingLamp} sizes="(min-width: 960px) 50vw, 100vw" />
-          </div>
-          <Reveal className="stack">
-            <p className="label">Your phone</p>
-            <h2 className="h2">Take it in, or leave it.<br />We never ask which.</h2>
-            <p className="body">
-              There is a locker outside every suite and you get the key either way. Some people
-              lock the phone away because that is the only way they will genuinely leave it alone
-              for an hour. Others keep it on the armrest. Both are completely normal here.
-            </p>
-            <p className="body">
-              We are not going to take your phone off you and call it wellness. The choice is the point.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── HYGIENE ── */}
-      <section className="surface-dark" aria-label="Between guests">
-        <div className="wrap sec stack" style={{ gap: "clamp(40px, 6vw, 68px)" }}>
-          <Reveal className="rail">
-            <div className="rail__label"><p className="label">Between guests</p></div>
-            <h2 className="rail__body h2" style={{ maxWidth: "30ch" }}>
-              Someone sat here before you. Here is exactly what happened next.
+      <section
+        className="visit-banner surface-mist"
+        aria-labelledby="closing-title"
+      >
+        <div className="wrap visit-banner__inner">
+          <div>
+            <p className="label">Kimihurura · Kigali</p>
+            <h2 className="h1" id="closing-title">
+              Your next quiet moment
+              <br />
+              <em>starts here.</em>
             </h2>
-          </Reveal>
-          <div className="grid-3">
-            {HYGIENE_PROTOCOL.map(({ label, detail }) => (
-              <div key={label} className="stack--tight" style={{ borderTop: "1px solid var(--s-rule-2)", paddingTop: 20 }}>
-                <h3 className="data" style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 400 }}>{label}</h3>
-                <p className="meta">{detail}</p>
-              </div>
-            ))}
+            <p className="body">
+              {SITE_CONFIG.hours.weekdays}
+              <br />
+              {SITE_CONFIG.hours.weekends}
+            </p>
           </div>
-        </div>
-      </section>
-
-      {/* ── PRICES ── */}
-      <section className="surface-paper" id="pricing" aria-label="Prices">
-        <div className="wrap sec stack" style={{ gap: 40 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px solid var(--s-rule-2)", paddingBottom: 18 }}>
-            <p className="label">Prices</p>
-            <p className="meta">Paid when you book. Free cancellation up to four hours before.</p>
+          <div className="visit-banner__actions">
+            <Link className="btn" href="/book">
+              Book a session ↗
+            </Link>
+            <Link className="tlink" href="/contact">
+              Find us in Kigali ↗
+            </Link>
           </div>
-          <div className="rule-grid">
-            {SESSIONS.map((s) => (
-              <div key={s.id} className="stack--tight">
-                <span className="data--lg">{s.price}</span>
-                <span className="h3" style={{ fontFamily: "var(--font-serif)", fontSize: 22 }}>{s.name}</span>
-                <span className="data" style={{ fontSize: 11, color: "var(--s-meta)" }}>
-                  {s.duration} · {s.offPeakPrice} quiet hours
-                </span>
-                <Link className="tlink" href={`/book?session=${s.id}`} style={{ marginTop: 8 }}>Book this &rarr;</Link>
-              </div>
-            ))}
-            <div className="stack--tight" style={{ background: "var(--s-raised)" }}>
-              <span className="data--lg">&minus;20%</span>
-              <span className="h3" style={{ fontFamily: "var(--font-serif)", fontSize: 22 }}>{OFF_PEAK.label}</span>
-              <span className="data" style={{ fontSize: 11, color: "var(--s-meta)" }}>{OFF_PEAK.window}</span>
-              <Link className="tlink" href="/packs" style={{ marginTop: 8 }}>Session packs &rarr;</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── QUOTE ── */}
-      <section className="surface-dim" aria-label="Why this exists">
-        <div className="wrap sec" style={{ maxWidth: 1000, textAlign: "center" }}>
-          <div className="hairline" style={{ height: 56, margin: "0 auto 32px" }} />
-          <blockquote className="quote">
-            Some things only become clear when you stop moving long enough to hear them.
-          </blockquote>
-        </div>
-      </section>
-
-      {/* ── CTA BAND ── */}
-      <section className="surface-sage" id="book" aria-label="Book a session">
-        <div className="wrap" style={{ paddingBlock: "clamp(44px, 6vw, 72px)", display: "flex", flexWrap: "wrap", gap: 28, alignItems: "center", justifyContent: "space-between" }}>
-          <p className="body" style={{ maxWidth: "52ch" }}>
-            {SITE_CONFIG.hours.weekdays} · {SITE_CONFIG.hours.weekends}. Book online, or walk in
-            when a suite is free.
-          </p>
-          <Link className="btn btn--outline" href="/book">Book a chair</Link>
         </div>
       </section>
     </main>

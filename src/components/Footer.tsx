@@ -28,7 +28,7 @@ const COLUMNS = [
   {
     heading: "Visit",
     links: [
-      { label: "Book a chair", href: "/book" },
+      { label: "Book a session", href: "/book" },
       { label: "My bookings", href: "/account" },
       { label: "Where we are", href: "/contact" },
       { label: "Get in touch", href: "/contact" },
@@ -42,13 +42,19 @@ export default function Footer() {
 
   if (pathname.startsWith("/book")) {
     return (
-      <footer className="footer surface-deep" role="contentinfo">
+      <footer className="footer surface-paper" role="contentinfo">
         <div className="wrap">
           <div className="footer__base">
-            <span>&copy; {new Date().getFullYear()} {SITE_CONFIG.name}, Kigali</span>
+            <span>
+              &copy; {new Date().getFullYear()} {SITE_CONFIG.name}, Kigali
+            </span>
             <span>
               Questions?{" "}
-              <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener noreferrer">
+              <a
+                href={`https://wa.me/${contact.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 WhatsApp us
               </a>{" "}
               or call {contact.phone}
@@ -60,12 +66,14 @@ export default function Footer() {
   }
 
   return (
-    <footer className="footer surface-deep" role="contentinfo">
+    <footer className="footer surface-paper" role="contentinfo">
       <div className="wrap">
         <div className="footer__grid">
           <div className="stack">
             <img className="footer__lockup" src={LOGO} alt={SITE_CONFIG.name} />
-            <span className="quote" style={{ fontSize: 19 }}>{SITE_CONFIG.tagline}</span>
+            <span className="quote" style={{ fontSize: 19 }}>
+              {SITE_CONFIG.tagline}
+            </span>
             <p className="data" style={{ lineHeight: 2 }}>
               {address.street}
               <br />
@@ -95,10 +103,15 @@ export default function Footer() {
 
         <div className="footer__base">
           <span className="label">We accept</span>
-          <span className="data">{payments.methods.join(" · ").toUpperCase()}</span>
+          <span className="data">
+            {payments.methods.join(" · ").toUpperCase()}
+          </span>
         </div>
         <div className="footer__base">
-          <span>&copy; {new Date().getFullYear()} {SITE_CONFIG.name}, Kigali. All rights reserved.</span>
+          <span>
+            &copy; {new Date().getFullYear()} {SITE_CONFIG.name}, Kigali. All
+            rights reserved.
+          </span>
           <span>A place to stop.</span>
         </div>
       </div>
