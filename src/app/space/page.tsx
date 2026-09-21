@@ -12,17 +12,20 @@ export const metadata = {
 export default function SpacePage() {
   return (
     <main id="main-content">
-      <section className="hero surface-deep" data-dark-top style={{ minHeight: "min(64vh, 620px)" }}>
-        <div className="hero__media">
-          <img src={IMAGES.timberRoom.src} alt={IMAGES.timberRoom.alt} style={{ opacity: 0.5 }} />
-        </div>
-        <div className="hero__scrim" />
-        <div className="hero__inner" style={{ paddingBlock: "clamp(80px, 12vh, 140px) clamp(40px, 6vh, 64px)" }}>
-          <div className="hero__body">
+      <section className="surface-paper page-open">
+        <div className="wrap page-open__inner">
+          <div className="page-open__copy">
             <p className="label">The space · Kimihurura</p>
-            <h1 className="display" style={{ marginTop: 18, maxWidth: "22ch" }}>
+            <h1 className="h1" style={{ marginTop: 18, maxWidth: "16ch" }}>
               Four suites, one quiet room, no music.
             </h1>
+            <p className="lead" style={{ marginTop: 22 }}>
+              One room is yours alone and locks from the inside. The other is shared, silent,
+              and has no clock in it.
+            </p>
+          </div>
+          <div className="page-open__media">
+            <Figure {...IMAGES.timberRoom} eager sizes="(min-width: 900px) 46vw, 100vw" />
           </div>
         </div>
       </section>
@@ -48,7 +51,7 @@ export default function SpacePage() {
         </div>
       </section>
 
-      <section className="surface-dark">
+      <section className="surface-stone">
         <div className="wrap sec rail">
           <div className="rail__label stack" style={{ flex: "1 1 340px" }}>
             <p className="label">The shelf</p>

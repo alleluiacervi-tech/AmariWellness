@@ -133,7 +133,7 @@ export default function BookingFlow() {
                   ))}
                 </div>
                 <button className="btn booking-next" onClick={() => go(2)}>
-                  Choose a time <Bloom />
+                  Choose a time
                 </button>
               </>
             )}
@@ -187,7 +187,7 @@ export default function BookingFlow() {
                     disabled={!date || !slot}
                     onClick={() => go(3)}
                   >
-                    Your details <Bloom />
+                    Your details
                   </button>
                 </div>
               </>
@@ -271,7 +271,7 @@ export default function BookingFlow() {
                     Back
                   </button>
                   <button className="btn" type="submit">
-                    Preview confirmation <Bloom />
+                    Preview confirmation
                   </button>
                 </div>
               </form>
@@ -296,7 +296,7 @@ export default function BookingFlow() {
                 </p>
                 <div className="booking-actions">
                   <Link className="btn" href="/">
-                    Back to Amari <Bloom />
+                    Back to Amari
                   </Link>
                   <button
                     className="btn btn--outline"

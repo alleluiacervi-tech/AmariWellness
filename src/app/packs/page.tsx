@@ -12,7 +12,7 @@ export const metadata = {
 export default function PacksPage() {
   return (
     <main id="main-content">
-      <section className="surface-deep" data-dark-top>
+      <section className="surface-stone">
         <div className="wrap" style={{ paddingBlock: "clamp(64px, 9vw, 124px) clamp(48px, 7vw, 80px)" }}>
           <p className="label">Packs · Vouchers · Companies</p>
           <h1 className="h1" style={{ marginTop: 20, maxWidth: "22ch" }}>
@@ -26,11 +26,12 @@ export default function PacksPage() {
       </section>
 
       <section className="surface-paper">
-        <div className="wrap sec--tight rule-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+        <div className="wrap sec--tight">
+          <div className="rule-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
           {PACKS.map((p) => (
             <article
               key={p.id}
-              className={p.featured ? "surface-dark stack" : "stack"}
+              className={p.featured ? "stack pack--featured" : "stack"}
               style={{ gap: 14, padding: "clamp(28px, 3vw, 40px) clamp(24px, 3vw, 34px)" }}
             >
               <span className="label">{p.featured ? "Most people choose this" : p.validity}</span>
@@ -53,6 +54,7 @@ export default function PacksPage() {
               </Link>
             </article>
           ))}
+          </div>
         </div>
       </section>
 
