@@ -77,11 +77,12 @@ export default function Footer() {
             <span className="quote" style={{ fontSize: 19 }}>
               {SITE_CONFIG.tagline}
             </span>
-            <p className="data" style={{ lineHeight: 2 }}>
+            <p className="footer__address">
               {address.street}
               <br />
               {address.neighborhood}, {address.city}
-              <br />
+            </p>
+            <p className="footer__hours">
               {hours.weekdays}
               <br />
               {hours.weekends}

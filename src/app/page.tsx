@@ -7,9 +7,9 @@ import { SITE_CONFIG } from "@/data/site"
 import { IMAGES } from "@/data/images"
 
 export const metadata = {
-  title: "Amari — A little time. Entirely yours.",
+  title: "Amari — A Chair. A Quiet Room. Time to Think.",
   description:
-    "Private automated massage sessions in Kimihurura, Kigali. Discover your space to unwind, explore our sessions, and make time for yourself.",
+    "Private automated massage suites in Kimihurura, Kigali. No therapist, no noise — you close the door yourself. Book online from 8,000 RWF.",
 }
 
 const sessionCopy = [
@@ -56,17 +56,19 @@ export default function HomePage() {
             <span aria-hidden="true" /> A moment of calm in Kigali
           </p>
           <h1 id="welcome-title">
-            A little time.
+            A chair.
             <br />
-            <em>Entirely yours.</em>
+            A quiet room.
+            <br />
+            <em>Time to think.</em>
           </h1>
           <p className="lead">
-            Step out of the everyday. Settle into your own private massage
-            suite, and unwind at your pace.
+            A private room, a machine that does the work, and nobody to talk to.
+            You close the door yourself.
           </p>
           <div className="welcome__actions">
             <Link className="btn" href="/book">
-              Book a session <Bloom />
+              Book a session
             </Link>
             <a className="tlink" href="#the-space">
               Explore the space <Bloom />
@@ -125,7 +127,7 @@ export default function HomePage() {
             <div>
               <p className="label">Make room for yourself</p>
               <h2 className="h1" id="sessions-title">
-                A pause for every kind of day.
+                Fifteen minutes, or a full hour.
               </h2>
             </div>
             <Link className="tlink" href="/sessions">
@@ -161,7 +163,7 @@ export default function HomePage() {
                     className={index === 1 ? "btn" : "btn btn--outline"}
                     href={`/book?session=${session.id}`}
                   >
-                    Choose {session.durationMinutes} minutes <Bloom />
+                    Choose {session.durationMinutes} minutes
                   </Link>
                 </div>
               </article>
@@ -191,9 +193,9 @@ export default function HomePage() {
         <Reveal className="space-story__copy">
           <p className="label">The Amari feeling</p>
           <h2 className="h1" id="space-title">
-            Come for the pause.
+            Somewhere to sit
             <br />
-            <em>Stay for the quiet.</em>
+            <em>afterwards.</em>
           </h2>
           <p className="lead">Some time should belong to you alone.</p>
           <p className="body">
@@ -208,7 +210,7 @@ export default function HomePage() {
       </section>
 
       <section
-        className="surface-mist sec"
+        className="surface-stone sec"
         id="what"
         aria-labelledby="visit-title"
       >
@@ -217,7 +219,7 @@ export default function HomePage() {
             <div>
               <p className="label">Your first visit</p>
               <h2 className="h1" id="visit-title">
-                Easy from the moment you arrive.
+                What actually happens.
               </h2>
             </div>
           </Reveal>
@@ -250,9 +252,9 @@ export default function HomePage() {
         <div>
           <p className="label">A few things to know</p>
           <h2 className="h1" id="faq-title">
-            Feel at home,
+            Before your
             <br />
-            before you arrive.
+            first session.
           </h2>
           <Link className="tlink" href="/contact">
             Ask us a question <Bloom />
@@ -272,7 +274,7 @@ export default function HomePage() {
       </section>
 
       <section
-        className="visit-banner surface-mist"
+        className="visit-banner surface-deep"
         aria-labelledby="closing-title"
       >
         <div className="wrap visit-banner__inner">
@@ -291,7 +293,7 @@ export default function HomePage() {
           </div>
           <div className="visit-banner__actions">
             <Link className="btn" href="/book">
-              Book a session <Bloom />
+              Book a session
             </Link>
             <Link className="tlink" href="/contact">
               Find us in Kigali <Bloom />

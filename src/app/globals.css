@@ -56,13 +56,14 @@
 /* ───────────────────────────────────────────────────────────────
    SURFACES — components read --s-*, never a literal colour
    ─────────────────────────────────────────────────────────────── */
-.surface-paper { --s-ground: var(--paper); --s-raised: var(--paper-dim); --s-ink: var(--forest-700); --s-body: #435c4b; --s-meta: #5f7568; --s-rule: rgb(28 53 40 / 0.14); --s-rule-2: rgb(28 53 40 / 0.28); --s-label: var(--sage-text); --s-accent: var(--gold-text); --s-focus: var(--forest-700); }
-.surface-dim   { --s-ground: var(--paper-dim); --s-raised: var(--paper); --s-ink: var(--forest-700); --s-body: #405747; --s-meta: #5b7163; --s-rule: rgb(28 53 40 / 0.16); --s-rule-2: rgb(28 53 40 / 0.3); --s-label: var(--sage-text); --s-accent: var(--gold-text); --s-focus: var(--forest-700); }
+.surface-paper { --s-ground: var(--paper); --s-raised: var(--paper-dim); --s-ink: var(--forest-700); --s-body: #435c4b; --s-meta: #56685b; --s-rule: rgb(28 53 40 / 0.14); --s-rule-2: rgb(28 53 40 / 0.28); --s-label: var(--sage-text); --s-accent: var(--gold-text); --s-focus: var(--forest-700); }
+.surface-dim   { --s-ground: var(--paper-dim); --s-raised: var(--paper); --s-ink: var(--forest-700); --s-body: #405747; --s-meta: #53645a; --s-rule: rgb(28 53 40 / 0.16); --s-rule-2: rgb(28 53 40 / 0.3); --s-label: var(--sage-text); --s-accent: var(--gold-text); --s-focus: var(--forest-700); }
 .surface-dark  { --s-ground: var(--forest-700); --s-raised: var(--forest-600); --s-ink: #f4f1eb; --s-body: #c3cfc6; --s-meta: #94a79a; --s-rule: rgb(244 241 235 / 0.16); --s-rule-2: rgb(244 241 235 / 0.32); --s-label: var(--sage); --s-accent: var(--gold); --s-focus: var(--gold); }
 .surface-deep  { --s-ground: var(--forest-900); --s-raised: var(--forest-800); --s-ink: #f4f1eb; --s-body: #bcc9bf; --s-meta: #8c9f92; --s-rule: rgb(244 241 235 / 0.14); --s-rule-2: rgb(244 241 235 / 0.3); --s-label: var(--sage); --s-accent: var(--gold); --s-focus: var(--gold); }
+.surface-stone { --s-ground: var(--paper-warm); --s-raised: var(--paper); --s-ink: var(--forest-700); --s-body: #3f4c3c; --s-meta: #54604f; --s-rule: rgb(28 53 40 / 0.18); --s-rule-2: rgb(28 53 40 / 0.34); --s-label: #3a5f48; --s-accent: #6a520d; --s-focus: var(--forest-700); }
 .surface-sage  { --s-ground: var(--sage-deep); --s-raised: var(--sage-deep); --s-ink: var(--paper); --s-body: #dde8e1; --s-meta: #c2d4c9; --s-rule: rgb(250 248 244 / 0.3); --s-rule-2: rgb(250 248 244 / 0.5); --s-label: var(--paper); --s-accent: var(--paper); --s-focus: var(--paper); }
 
-.surface-paper, .surface-dim, .surface-dark, .surface-deep, .surface-sage {
+.surface-paper, .surface-dim, .surface-stone, .surface-dark, .surface-deep, .surface-sage {
   background: var(--s-ground);
   color: var(--s-body);
 }
@@ -312,7 +313,7 @@ html { scroll-padding-top: calc(var(--nav-h) + 20px); }
 .welcome__copy { grid-area: copy; min-width: 0; padding-block: 20px 8px; }
 .welcome__eyebrow { display: flex; align-items: center; gap: 10px; }
 .welcome__eyebrow > span { width: 7px; height: 7px; background: var(--sage-deep); border-radius: 50%; }
-.welcome h1 { font-family: var(--font-serif); font-weight: 400; color: var(--s-ink); font-size: clamp(52px, 6.5vw, 88px); line-height: 1.05; letter-spacing: -0.025em; margin: 28px 0 24px; }
+.welcome h1 { font-family: var(--font-serif); font-weight: 400; color: var(--s-ink); font-size: clamp(44px, 5.4vw, 76px); line-height: 1.0; letter-spacing: -0.025em; margin: 24px 0 22px; }
 .welcome .lead { max-width: 35ch; font-size: 18px; }
 .welcome__actions { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; margin-top: 30px; }
 .welcome__note { color: var(--s-meta); font-size: 13px; margin: 20px 0 34px; }
@@ -571,4 +572,105 @@ html { scroll-padding-top: calc(var(--nav-h) + 20px); }
   .welcome__copy { padding-inline: 8px; }
   .welcome__actions { gap: 10px; }
   .welcome .btn { padding-inline: 10px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REFINEMENT — depth without darkness
+
+   Every page now opens on a light ground. Contrast comes from value
+   steps (paper → mist → stone), scale and photography instead of
+   from black backgrounds, and a single deep block closes the home
+   page so the page resolves rather than trailing off.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Light, photo-led page opener — replaces the dark slab headers. */
+.page-open__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.86fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: center;
+  padding-block: clamp(36px, 5vw, 64px) clamp(36px, 5vw, 64px);
+}
+.page-open__media .figure,
+.page-open__media .figure__fallback { aspect-ratio: 4 / 3; }
+.page-open__copy { min-width: 0; }
+.page-open__media { min-width: 0; }
+.page-open__media .figure,
+.page-open__media .figure__fallback {
+  aspect-ratio: 5 / 4;
+  border-radius: 120px 4px 4px 4px;
+  background: var(--paper-dim);
+}
+@media (max-width: 880px) {
+  .page-open__inner { grid-template-columns: 1fr; padding-block: 28px 40px; }
+  .page-open__media { order: -1; }
+  .page-open__media .figure,
+  .page-open__media .figure__fallback { aspect-ratio: 16 / 10; border-radius: 80px 4px 4px 4px; }
+}
+
+/* The featured pack was the only dark fill on a light page. A raised
+   ground and a gold edge mark it just as clearly, without shouting. */
+.pack--featured {
+  background: var(--s-raised);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+.pack--featured .label { color: var(--gold-text); }
+
+/* One unifying grade. The source photography arrives at different
+   colour temperatures; a light touch pulls it into one room without
+   reading as a filter on an otherwise bright page. */
+.figure img { filter: saturate(0.86) contrast(1.02); }
+
+/* The closing block is the only dark surface left on the site, so it
+   should feel deliberate: generous, centred, and clearly the end. */
+.visit-banner.surface-deep .visit-banner__inner { padding-block: clamp(72px, 9vw, 112px); }
+.visit-banner.surface-deep .btn { background: var(--paper); color: var(--forest-900); }
+.visit-banner.surface-deep .btn:hover { background: #fff; }
+.visit-banner.surface-deep .tlink { color: var(--paper); border-bottom-color: rgb(250 248 244 / 0.4); }
+.visit-banner.surface-deep .tlink:hover { border-bottom-color: var(--gold); }
+
+/* Payment marks must keep their brand colour, so they earn their
+   place by being small and well-spaced rather than by being muted. */
+.payment-methods svg { height: 22px; width: auto; }
+.payment-methods li { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--s-meta); }
+
+/* The footer's address is not machine data, so it does not wear the
+   accent. Hours stay in mono — they are a reading of the clock — but
+   in the meta tone, and they no longer wrap mid-time. */
+.footer__address { margin: 0; font-size: 15px; line-height: 1.75; color: var(--s-body); }
+.footer__hours {
+  margin: 14px 0 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  color: var(--s-meta);
+  text-wrap: nowrap;
+}
+@media (max-width: 420px) { .footer__hours { text-wrap: wrap; } }
+
+/* ── Hero framing ──────────────────────────────────────────────
+   The supplier stamped their trademark into the bottom-right corner
+   of this product shot. The frame is narrowed and anchored left so
+   that corner falls outside it: a crop, not a patch over the top,
+   so no resolution is lost and nothing is painted out. It also puts
+   the chair more fully in frame. Retire this when we shoot our own
+   chairs — see IMAGES.suiteMood. */
+.welcome__visual .figure,
+.welcome__visual .figure__fallback { aspect-ratio: 0.88; }
+.welcome__visual img { object-position: left top; }
+
+@media (min-width: 621px) and (max-width: 1100px) {
+  /* Height is driven by the copy column here, so the frame shape
+     varies; left/top anchoring drops that corner first whichever
+     axis happens to overflow. */
+  .welcome__visual img { object-position: left top; }
+}
+
+@media (max-width: 620px) {
+  /* The phone frame is a wide band from the middle of the image, so
+     the corner is already out of shot; keep its composition. */
+  .welcome__visual .figure,
+  .welcome__visual .figure__fallback { aspect-ratio: 1.42; }
+  .welcome__visual img { object-position: center 50%; }
 }
