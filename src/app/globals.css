@@ -1042,6 +1042,10 @@
   .footer__lockup { width: 164px; height: auto; }
   .footer__tagline { font-family: var(--font-serif); font-style: italic; font-size: 23px; line-height: 1.25; color: var(--s-ink); margin: 0; max-width: 18ch; }
   .footer__address { margin: 0; font-size: var(--t-small); line-height: 1.7; color: var(--s-body); font-style: normal; }
+  .footer__social { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
+  .footer__social a { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-small); color: var(--s-body); min-height: 40px; transition: color var(--d-fast) var(--ease); }
+  .footer__social a:hover { color: var(--s-ink); }
+  .footer__social .icon { width: 18px; height: 18px; }
   .footer__col { display: flex; flex-direction: column; gap: 14px; }
   .footer__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   .footer__link { display: inline-flex; align-items: center; min-height: 40px; font-size: var(--t-small); color: var(--s-body); transition: color var(--d-fast) var(--ease); }

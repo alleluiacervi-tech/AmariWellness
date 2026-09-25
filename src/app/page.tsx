@@ -7,9 +7,8 @@ import Link from "@/components/Link"
 import OpenStatus from "@/components/OpenStatus"
 import SectionHead from "@/components/SectionHead"
 import { formatRWF } from "@/data/sessions"
-import { PACKS } from "@/data/packs"
-import { SITE_CONFIG, VISIT_STEPS } from "@/data/site"
 import { IMAGES } from "@/data/images"
+import { getFaqs, getPackProducts, getSessionTypes, getSiteConfig, getVisitSteps } from "@/server/db/content"
 import { OPEN_GRAPH_BASE } from "@/lib/metadata"
 
 const DESCRIPTION =
@@ -26,31 +25,17 @@ export const metadata: Metadata = {
   },
 }
 
-const QUESTIONS = [
-  {
-    q: "What is an automated massage session?",
-    a: "Your massage is delivered by the chair, in your own private suite. There is no therapist and nobody else in the room. You set the intensity on the control panel and can stop the programme whenever you choose.",
-  },
-  {
-    q: "What should I wear?",
-    a: "Whatever you arrived in, as long as it is comfortable. The chair works through clothing. We ask you to take your shoes off — slippers are provided — and to empty your back pockets.",
-  },
-  {
-    q: "Can I keep my phone with me?",
-    a: "Of course. Keep it with you or lock it away; we hand you a locker key either way and never ask which you chose. The one rule is that the lounge stays silent.",
-  },
-  {
-    q: "How is the suite prepared between guests?",
-    a: "The chair cover and headrest cloth are replaced with a freshly laundered set, every contact surface is disinfected, and the room is aired. Fifteen minutes are reserved after every booking for it.",
-  },
-]
-
-const halfHourPackRate = Math.min(
-  ...PACKS.filter((p) => p.sessionMinutes === 30).map((p) => p.perSessionNumber),
-)
-
-export default function HomePage() {
-  const { address } = SITE_CONFIG
+export default async function HomePage() {
+  const [siteConfig, sessions, packs, visitSteps, questions] = await Promise.all([
+    getSiteConfig(),
+    getSessionTypes(),
+    getPackProducts(),
+    getVisitSteps(),
+    getFaqs("home"),
+  ])
+  const { address } = siteConfig
+  const halfHourRates = packs.filter((p) => p.sessionMinutes === 30).map((p) => p.perSessionNumber)
+  const halfHourPackRate = halfHourRates.length > 0 ? Math.min(...halfHourRates) : 0
 
   return (
     <main id="main-content">
@@ -66,7 +51,7 @@ export default function HomePage() {
             work, and the lounge afterwards for as long as you like. In{" "}
             {address.neighborhood}, {address.city}.
           </p>
-          <HeroTime />
+          <HeroTime sessions={sessions} schedule={siteConfig.hours.schedule} />
         </div>
 
         <div className="hero__visual enter-media">
@@ -112,7 +97,7 @@ export default function HomePage() {
             intro="Timed for a half-hour session, from the moment the door closes. No forms at the door, no small talk, nobody in the room."
           />
           <ol className="timeline">
-            {VISIT_STEPS.map((step) => (
+            {visitSteps.map((step) => (
               <li className="timeline__step" key={step.title}>
                 <span className="timeline__time">{step.time}</span>
                 <h3 className="h4">{step.title}</h3>
@@ -124,7 +109,7 @@ export default function HomePage() {
       </section>
 
       <div className="wrap sec">
-        <Faq name="home-faq" items={QUESTIONS} title="Before your first session.">
+        <Faq name="home-faq" items={questions} title="Before your first session.">
           <p className="small">
             Anything else, health questions included, the desk answers on
             WhatsApp within the hour.
@@ -148,8 +133,8 @@ export default function HomePage() {
             </p>
           </div>
           <div className="closing__aside">
-            <OpenStatus />
-            <Hours />
+            <OpenStatus schedule={siteConfig.hours.schedule} />
+            <Hours schedule={siteConfig.hours.schedule} />
             <div className="cluster">
               <Link className="btn" href="/book">
                 Book a session
