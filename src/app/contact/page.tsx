@@ -5,8 +5,8 @@ import OpenStatus from "@/components/OpenStatus"
 import Hours from "@/components/Hours"
 import PageHeader from "@/components/PageHeader"
 import { ArrowOut, Chat, Mail, Phone } from "@/components/icons"
+import { SITE_CONFIG } from "@/data/site"
 import { IMAGES } from "@/data/images"
-import { getPackProducts, getSiteConfig } from "@/server/db/content"
 import { pageMetadata } from "@/lib/metadata"
 
 export const metadata = pageMetadata({
@@ -16,10 +16,9 @@ export const metadata = pageMetadata({
   path: "/contact",
 })
 
-export default async function ContactPage() {
-  const [siteConfig, packs] = await Promise.all([getSiteConfig(), getPackProducts()])
-  const { address, contact, hours } = siteConfig
-  const whatsapp = `https://wa.me/${contact.whatsapp ?? ""}`
+export default function ContactPage() {
+  const { address, contact, hours } = SITE_CONFIG
+  const whatsapp = `https://wa.me/${contact.whatsapp}`
 
   return (
     <main id="main-content">
@@ -28,7 +27,7 @@ export default async function ContactPage() {
         lead={`${address.street}, just off the ${address.neighborhood} roundabout. ${address.parking}, and the door is right off the road.`}
         media={IMAGES.architecture}
       >
-        <Link className="btn" href={address.mapsUrl ?? undefined}>
+        <Link className="btn" href={address.mapsUrl}>
           Get directions <ArrowOut />
         </Link>
         <Link className="tlink" href={whatsapp}>
@@ -50,7 +49,7 @@ export default async function ContactPage() {
             <p className="meta">
               Plus Code <span className="data">{address.plusCode}</span>
             </p>
-            <Link className="tlink" href={address.mapsUrl ?? undefined}>
+            <Link className="tlink" href={address.mapsUrl}>
               Open in Google Maps <ArrowOut />
             </Link>
           </section>
@@ -59,8 +58,8 @@ export default async function ContactPage() {
             <h2 className="label" id="hours-title">
               Hours
             </h2>
-            <OpenStatus schedule={hours.schedule} />
-            <Hours schedule={hours.schedule} />
+            <OpenStatus />
+            <Hours />
             <p className="meta">
               {hours.note} {hours.walkins}
             </p>
@@ -74,11 +73,11 @@ export default async function ContactPage() {
               <Link href={whatsapp}>
                 <Chat className="icon mr-3" /> WhatsApp, the fastest way
               </Link>
-              <a href={`tel:${(contact.phone ?? "").replace(/[^0-9+]/g, "")}`}>
+              <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>
                 <Phone className="icon mr-3" />
                 <span className="font-mono">{contact.phone}</span>
               </a>
-              <a href={`mailto:${contact.email ?? ""}`}>
+              <a href={`mailto:${contact.email}`}>
                 <Mail className="icon mr-3" />
                 <span className="font-mono">{contact.email}</span>
               </a>
@@ -87,8 +86,8 @@ export default async function ContactPage() {
           </section>
         </div>
 
-        <Suspense fallback={<ContactForm contact={contact} packs={packs} />}>
-          <ContactFormFromParams contact={contact} packs={packs} />
+        <Suspense fallback={<ContactForm />}>
+          <ContactFormFromParams />
         </Suspense>
       </div>
     </main>

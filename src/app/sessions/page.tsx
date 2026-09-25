@@ -4,8 +4,9 @@ import Faq from "@/components/Faq"
 import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
 import { Check } from "@/components/icons"
-import { INCLUDED, OFF_PEAK } from "@/data/sessions"
-import { getFaqs, getPackProducts, getSessionTypes } from "@/server/db/content"
+import { INCLUDED, OFF_PEAK, SESSIONS } from "@/data/sessions"
+import { PACKS } from "@/data/packs"
+import { CHAIR_FAQS } from "@/data/site"
 import { pageMetadata } from "@/lib/metadata"
 
 export const metadata = pageMetadata({
@@ -15,18 +16,26 @@ export const metadata = pageMetadata({
   path: "/sessions",
 })
 
-export default async function SessionsPage() {
-  const [sessions, packs, sessionFaqs] = await Promise.all([
-    getSessionTypes(),
-    getPackProducts(),
-    getFaqs("sessions"),
-  ])
-  const questions = [
-    ...sessionFaqs,
-    { q: "When are quiet-hours prices available?", a: `Quiet-hours rates apply ${OFF_PEAK.window}. ${OFF_PEAK.note}` },
-  ]
-  const halfHourPack = packs.find((p) => p.featured) ?? packs[0]
+const chair = (q: string) => CHAIR_FAQS.find((f) => f.q.startsWith(q))!
 
+const QUESTIONS = [
+  {
+    q: "Which session should I start with?",
+    a: "The Half Hour. It is long enough to properly unwind and covers you from neck to feet. Choose fifteen minutes for a shorter reset, or the full hour once you know you like it.",
+  },
+  {
+    q: "When are quiet-hours prices available?",
+    a: `Quiet-hours rates apply ${OFF_PEAK.window}. ${OFF_PEAK.note}`,
+  },
+  chair("Does it hurt?"),
+  chair("Is anyone in the room"),
+  chair("Is there a height"),
+  chair("Can I use it if I am pregnant"),
+]
+
+const halfHourPack = PACKS.find((p) => p.featured) ?? PACKS[0]
+
+export default function SessionsPage() {
   return (
     <main id="main-content">
       <PageHeader
@@ -34,7 +43,7 @@ export default async function SessionsPage() {
         lead="The same private suite and the same chair, with a little more time to make it yours. Quiet-hours prices apply on weekdays before 16:00."
       >
         <nav className="jump-links" aria-label="Jump to a session">
-          {sessions.map((s) => (
+          {SESSIONS.map((s) => (
             <a className="chip" href={`#${s.id}`} key={s.id}>
               {s.durationMinutes} min
             </a>
@@ -55,7 +64,7 @@ export default async function SessionsPage() {
           </ul>
         </div>
 
-        {sessions.map((s) => (
+        {SESSIONS.map((s) => (
           <article
             className="programme"
             id={s.id}
@@ -103,7 +112,7 @@ export default async function SessionsPage() {
       <CtaBand
         name="Session packs"
         title="Coming back? Pay less per session."
-        body={`Prepaid packs bring a half hour down to ${halfHourPack?.perSession ?? "less"}. Shareable, no subscription, no card on file.`}
+        body={`Prepaid packs bring a half hour down to ${halfHourPack.perSession}. Shareable, no subscription, no card on file.`}
         href="/packs"
         cta="See session packs"
         secondary={
@@ -114,7 +123,7 @@ export default async function SessionsPage() {
       />
 
       <div className="wrap sec">
-        <Faq name="sessions-faq" items={questions} title="Before you book.">
+        <Faq name="sessions-faq" items={QUESTIONS} title="Before you book.">
           <p className="small">
             If you have a medical condition, talk to your doctor first, then to
             us. We would rather turn a booking away than give you a session you

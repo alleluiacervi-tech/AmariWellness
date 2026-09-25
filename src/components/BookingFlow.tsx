@@ -17,8 +17,13 @@ import {
   type PaymentMethod,
 } from "@/components/PaymentMethods"
 import { Calendar, Check } from "@/components/icons"
-import { OFF_PEAK, FEATURED_SESSION_ID } from "@/data/sessions"
-import type { SessionItem, SiteConfig } from "@/server/db/content"
+import {
+  SESSIONS,
+  OFF_PEAK,
+  FEATURED_SESSION_ID,
+  type SessionItem,
+} from "@/data/sessions"
+import { SITE_CONFIG } from "@/data/site"
 
 const STEPS = ["Your session", "Day & time", "Details & payment"]
 const TITLES = [
@@ -52,7 +57,7 @@ function makeReference() {
 }
 
 /** A standards-compliant calendar file; Kigali is UTC+2 all year. */
-function downloadIcs(ref: string, session: SessionItem, date: string, time: string, locationFull: string) {
+function downloadIcs(ref: string, session: SessionItem, date: string, time: string) {
   const start = new Date(`${date}T${time}:00+02:00`)
   const end = new Date(start.getTime() + session.durationMinutes * 60_000)
   const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")
@@ -68,7 +73,7 @@ function downloadIcs(ref: string, session: SessionItem, date: string, time: stri
     `DTSTART:${stamp(start)}`,
     `DTEND:${stamp(end)}`,
     `SUMMARY:${escape(`Amari · ${session.name}`)}`,
-    `LOCATION:${escape(locationFull)}`,
+    `LOCATION:${escape(SITE_CONFIG.address.full)}`,
     `DESCRIPTION:${escape(`Reference ${ref}. Arrive five minutes early — the lounge is yours afterwards.`)}`,
     "END:VEVENT",
     "END:VCALENDAR",
@@ -81,15 +86,7 @@ function downloadIcs(ref: string, session: SessionItem, date: string, time: stri
   URL.revokeObjectURL(url)
 }
 
-export function BookingFlow({
-  sessions,
-  siteConfig,
-  initialSession = FEATURED_SESSION_ID,
-}: {
-  sessions: SessionItem[]
-  siteConfig: SiteConfig
-  initialSession?: string
-}) {
+export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialSession?: string }) {
   const [step, setStep] = useState(1)
   const [sessionId, setSessionId] = useState(initialSession)
   const [days, setDays] = useState<string[]>([])
@@ -101,9 +98,9 @@ export function BookingFlow({
   const [reference, setReference] = useState("")
   const heading = useRef<HTMLHeadingElement>(null)
 
-  const session = sessions.find((s) => s.id === sessionId) ?? sessions[1] ?? sessions[0]
+  const session = SESSIONS.find((s) => s.id === sessionId) ?? SESSIONS[1]
   const weekend = date ? isWeekend(date) : false
-  const hours = weekend ? siteConfig.hours.schedule.weekend : siteConfig.hours.schedule.weekday
+  const hours = weekend ? SITE_CONFIG.hours.schedule.weekend : SITE_CONFIG.hours.schedule.weekday
   const quietHours = (time: string) => !weekend && Number(time.slice(0, 2)) < OFF_PEAK.endsAt
   const offPeak = Boolean(slot && quietHours(slot))
   const total = offPeak ? session.offPeakPrice : session.price
@@ -172,7 +169,7 @@ export function BookingFlow({
               <fieldset className="fieldset">
                 <legend className="sr-only">Session</legend>
                 <div className="options">
-                  {sessions.map((s) => (
+                  {SESSIONS.map((s) => (
                     <label className="option" key={s.id}>
                       <input
                         type="radio"
@@ -347,7 +344,7 @@ export function BookingFlow({
                   </strong>
                   <p>
                     This is a design preview: no card details are collected and
-                    no request is sent. {siteConfig.payments.note}
+                    no request is sent. {SITE_CONFIG.payments.note}
                   </p>
                 </div>
               </div>
@@ -385,7 +382,7 @@ export function BookingFlow({
                   <div>
                     <dt>Where</dt>
                     <dd className="serif">
-                      {siteConfig.address.street}, {siteConfig.address.neighborhood}
+                      {SITE_CONFIG.address.street}, {SITE_CONFIG.address.neighborhood}
                     </dd>
                   </div>
                   <div>
@@ -416,7 +413,7 @@ export function BookingFlow({
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => downloadIcs(reference, session, date, slot, siteConfig.address.full)}
+                  onClick={() => downloadIcs(reference, session, date, slot)}
                 >
                   <Calendar /> Add to calendar
                 </button>
@@ -497,14 +494,9 @@ export function BookingFlow({
 }
 
 /** Reads ?session= from the URL. Render inside <Suspense> with <BookingFlow /> as the fallback. */
-export default function BookingFlowFromParams({
-  sessions,
-  siteConfig,
-}: {
-  sessions: SessionItem[]
-  siteConfig: SiteConfig
-}) {
+export default function BookingFlowFromParams() {
   const params = useSearchParams()
-  const id = sessions.find((s) => s.id === params.get("session"))?.id ?? FEATURED_SESSION_ID
-  return <BookingFlow key={id} sessions={sessions} siteConfig={siteConfig} initialSession={id} />
+  const id =
+    SESSIONS.find((s) => s.id === params.get("session"))?.id ?? FEATURED_SESSION_ID
+  return <BookingFlow key={id} initialSession={id} />
 }
