@@ -1,108 +1,110 @@
 import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
 import { pageMetadata } from "@/lib/metadata"
-
-/* Returning-guest surface. Balances, bookings and visits are mock data
-   until the booking system is wired up — the layout is the deliverable. */
+import { requireClientPage } from "@/server/client-auth/dal"
+import { clientLogoutAction } from "@/server/client-auth/actions"
+import { getBookingsForClient, type ClientBookingRow } from "@/server/availability/bookingsForClient"
 
 export const metadata = {
   ...pageMetadata({
     title: "My bookings",
-    description: "Your session balance, your next booking, and your locker.",
+    description: "Your upcoming and past sessions.",
     path: "/account",
   }),
-  robots: { index: false, follow: true },
+  robots: { index: false, follow: false },
 }
 
-const PACK = { name: "Ten Half Hours", total: 10, left: 6, expires: "12 Nov 2026" }
+function formatVisit(b: ClientBookingRow) {
+  const day = new Date(b.startAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Kigali" })
+  const time = new Date(b.startAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Kigali" })
+  return { day, time }
+}
 
-const VISITS = [
-  { day: "9 Sep", time: "18:30", what: "The Half Hour", note: "Suite 2, intensity 3" },
-  { day: "2 Sep", time: "12:15", what: "The Quick Reset", note: "Suite 1, quiet hours" },
-  { day: "26 Aug", time: "19:00", what: "The Half Hour", note: "Suite 4, intensity 4" },
-  { day: "19 Aug", time: "11:00", what: "The Full Session", note: "Suite 2, quiet hours" },
-]
+const STATUS_NOTE: Record<ClientBookingRow["status"], string> = {
+  held: "Awaiting payment",
+  confirmed: "Confirmed",
+  checked_in: "Checked in",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  no_show: "No-show",
+}
 
-export default function AccountPage() {
+/** Phase 1.4b — see CLAUDE.md. Real bookings for the signed-in client; packs and vouchers aren't built yet (Phase 2), so that panel from the earlier design preview is dropped rather than shown with fake numbers. */
+export default async function AccountPage() {
+  const client = await requireClientPage()
+  const allBookings = await getBookingsForClient(client.id)
+  const now = new Date()
+  const upcoming = allBookings.filter((b) => b.status === "confirmed" && b.startAt > now)
+  const past = allBookings.filter((b) => !(b.status === "confirmed" && b.startAt > now))
+
   return (
     <main id="main-content">
       <PageHeader
-        label={<span className="tag tag--outline">Sample account, for preview</span>}
-        title="Welcome back."
-        lead="Six sessions left on your pack, and a quiet room waiting for you on Thursday evening."
+        title={`Welcome back${client.name && client.name !== "Guest" ? `, ${client.name.split(" ")[0]}` : ""}.`}
+        lead={
+          upcoming.length > 0
+            ? `${upcoming.length} upcoming ${upcoming.length === 1 ? "session" : "sessions"}.`
+            : "No upcoming sessions yet."
+        }
       >
         <Link className="btn" href="/book">
           Book a session
         </Link>
+        <form action={clientLogoutAction}>
+          <button className="btn btn--outline" type="submit">
+            Sign out
+          </button>
+        </form>
       </PageHeader>
 
-      <section className="wrap" aria-label="Your balance">
-        <div className="stat-grid">
-          <div className="stat">
-            <span className="label">Sessions left</span>
-            <span className="stat__value">
-              {String(PACK.left).padStart(2, "0")}
-              <small>of {PACK.total}</small>
-            </span>
-            <div
-              className="meter"
-              role="meter"
-              aria-label="Sessions left"
-              aria-valuemin={0}
-              aria-valuemax={PACK.total}
-              aria-valuenow={PACK.left}
-            >
-              <span style={{ width: `${(PACK.left / PACK.total) * 100}%` }} />
-            </div>
-            <span className="meta">
-              {PACK.name}, expires {PACK.expires}
-            </span>
-          </div>
-          <div className="stat">
-            <span className="label">Next session</span>
-            <span className="stat__value">Thu 18:30</span>
-            <span className="meta">The Half Hour, suite 2</span>
-            <Link className="tlink self-start" href="/book?session=half">
-              Change the time
-            </Link>
-          </div>
-          <div className="stat">
-            <span className="label">Your locker</span>
-            <span className="stat__value">No. 04</span>
-            <span className="meta">Held for your visits while the pack runs.</span>
-          </div>
-        </div>
+      <section className="wrap sec--tight stack" aria-labelledby="upcoming-title">
+        <h2 className="h3" id="upcoming-title">
+          Upcoming
+        </h2>
+        {upcoming.length === 0 ? (
+          <p className="meta">Nothing booked yet.</p>
+        ) : (
+          <ol className="visits">
+            {upcoming.map((b) => {
+              const { day, time } = formatVisit(b)
+              return (
+                <li className="visit" key={b.id}>
+                  <span className="visit__when">
+                    {day} <span className="font-mono">{time}</span>
+                  </span>
+                  <span className="h4">{b.sessionName}</span>
+                  <span className="visit__note">{b.suiteName}</span>
+                </li>
+              )
+            })}
+          </ol>
+        )}
       </section>
 
-      <section className="wrap sec--tight split split--top" aria-labelledby="visits-title">
-        <div className="stack">
-          <h2 className="h3" id="visits-title">
-            Recent visits
-          </h2>
+      <section className="wrap sec--tight stack" aria-labelledby="past-title">
+        <h2 className="h3" id="past-title">
+          Past visits
+        </h2>
+        {past.length === 0 ? (
+          <p className="meta">No visits yet.</p>
+        ) : (
           <ol className="visits">
-            {VISITS.map((v) => (
-              <li className="visit" key={v.day}>
-                <span className="visit__when">
-                  {v.day} <span className="font-mono">{v.time}</span>
-                </span>
-                <span className="h4">{v.what}</span>
-                <span className="visit__note">{v.note}</span>
-              </li>
-            ))}
+            {past.map((b) => {
+              const { day, time } = formatVisit(b)
+              return (
+                <li className="visit" key={b.id}>
+                  <span className="visit__when">
+                    {day} <span className="font-mono">{time}</span>
+                  </span>
+                  <span className="h4">{b.sessionName}</span>
+                  <span className="visit__note">
+                    {b.suiteName} — {STATUS_NOTE[b.status]}
+                  </span>
+                </li>
+              )
+            })}
           </ol>
-        </div>
-        <aside className="offer" aria-labelledby="topup-title">
-          <h2 className="h3" id="topup-title">
-            Six sessions left of ten.
-          </h2>
-          <p className="small">
-            Buy your next pack before this one expires and the remaining
-            balance rolls over once.
-          </p>
-          <Link className="btn btn--outline" href="/packs">
-            See packs
-          </Link>
-        </aside>
+        )}
       </section>
     </main>
   )
