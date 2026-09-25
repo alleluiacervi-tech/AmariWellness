@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation"
 import PaymentMethods from "@/components/PaymentMethods"
+import OpenStatus from "@/components/OpenStatus"
+import Hours from "@/components/Hours"
 import Link from "@/components/Link"
 import { SITE_CONFIG } from "@/data/site"
 
@@ -12,9 +14,9 @@ const COLUMNS = [
     heading: "The place",
     links: [
       { label: "The space & the shelf", href: "/space" },
-      { label: "The chairs & programmes", href: "/sessions" },
+      { label: "Between every guest", href: "/space#between-guests" },
+      { label: "What actually happens", href: "/#first-visit" },
       { label: "The journal", href: "/journal" },
-      { label: "What actually happens", href: "/#what" },
     ],
   },
   {
@@ -31,25 +33,27 @@ const COLUMNS = [
     links: [
       { label: "Book a session", href: "/book" },
       { label: "My bookings", href: "/account" },
-      { label: "Where we are", href: "/contact" },
-      { label: "Get in touch", href: "/contact" },
+      { label: "Find us", href: "/contact" },
+      { label: "Get in touch", href: "/contact#message" },
     ],
   },
 ]
 
 export default function Footer() {
-  const { address, contact, hours } = SITE_CONFIG
+  const { address, contact } = SITE_CONFIG
   const pathname = usePathname()
+  const year = new Date().getFullYear()
 
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return null
 
+  /* Mid-booking, the footer steps back to a single line of help. */
   if (pathname.startsWith("/book")) {
     return (
-      <footer className="footer surface-paper" role="contentinfo">
+      <footer className="footer surface-paper">
         <div className="wrap">
           <div className="footer__base">
             <span>
-              &copy; {new Date().getFullYear()} {SITE_CONFIG.name}, Kigali
+              &copy; {year} {SITE_CONFIG.name}, Kigali
             </span>
             <span>
               Questions?{" "}
@@ -58,9 +62,12 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                WhatsApp us
+                WhatsApp the desk
               </a>{" "}
-              or call {contact.phone}
+              or call{" "}
+              <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>
+                {contact.phone}
+              </a>
             </span>
           </div>
         </div>
@@ -69,28 +76,29 @@ export default function Footer() {
   }
 
   return (
-    <footer className="footer surface-paper" role="contentinfo">
+    <footer className="footer surface-paper">
       <div className="wrap">
         <div className="footer__grid">
-          <div className="stack">
-            <img className="footer__lockup" src={LOGO} alt={SITE_CONFIG.name} />
-            <span className="quote" style={{ fontSize: 19 }}>
-              {SITE_CONFIG.tagline}
-            </span>
-            <p className="footer__address">
-              {address.street}
+          <div className="footer__brand">
+            <img
+              className="footer__lockup"
+              src={LOGO}
+              alt={SITE_CONFIG.name}
+              width={164}
+              height={66}
+            />
+            <p className="footer__tagline">{SITE_CONFIG.tagline}</p>
+            <address className="footer__address">
+              {address.street}, {address.neighborhood}
               <br />
-              {address.neighborhood}, {address.city}
-            </p>
-            <p className="footer__hours">
-              {hours.weekdays}
-              <br />
-              {hours.weekends}
-            </p>
+              {address.city}, {address.country}
+            </address>
+            <Hours />
+            <OpenStatus />
           </div>
 
           {COLUMNS.map(({ heading, links }) => (
-            <div key={heading} className="stack">
+            <nav key={heading} className="footer__col" aria-label={heading}>
               <h2 className="label">{heading}</h2>
               <ul className="footer__list">
                 {links.map((l) => (
@@ -101,7 +109,7 @@ export default function Footer() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
         </div>
 
@@ -111,8 +119,7 @@ export default function Footer() {
         </div>
         <div className="footer__base">
           <span>
-            &copy; {new Date().getFullYear()} {SITE_CONFIG.name}, Kigali. All
-            rights reserved.
+            &copy; {year} {SITE_CONFIG.name}, Kigali. All rights reserved.
           </span>
           <span>A place to stop.</span>
         </div>

@@ -1,104 +1,131 @@
-import Link from "@/components/Link"
 import Faq from "@/components/Faq"
-import { PACKS, GIFT_VOUCHER, CORPORATE } from "@/data/packs"
+import Link from "@/components/Link"
+import PageHeader from "@/components/PageHeader"
+import SectionHead from "@/components/SectionHead"
+import { Check } from "@/components/icons"
+import { CORPORATE, GIFT_VOUCHER, PACK_BASICS, PACKS } from "@/data/packs"
+import { formatRWF } from "@/data/sessions"
 import { PACK_FAQS } from "@/data/site"
+import { pageMetadata } from "@/lib/metadata"
 
-export const metadata = {
-  title: "Session packs, vouchers & companies",
+export const metadata = pageMetadata({
+  title: "Session packs, gift vouchers & companies",
   description:
-    "Buy sessions up front at a lower price per session. No monthly charge, no card on file, no subscription to cancel.",
-}
+    "Buy sessions up front at a lower price per session. No monthly charge, no card on file, no subscription to cancel. Gift vouchers and company accounts too.",
+  path: "/packs",
+})
 
 export default function PacksPage() {
   return (
     <main id="main-content">
-      <section className="surface-stone">
-        <div className="wrap" style={{ paddingBlock: "clamp(64px, 9vw, 124px) clamp(48px, 7vw, 80px)" }}>
-          <p className="label">Packs · Vouchers · Companies</p>
-          <h1 className="h1" style={{ marginTop: 20, maxWidth: "22ch" }}>
-            Pay once. Come back whenever you like.
-          </h1>
-          <p className="lead" style={{ marginTop: 24, maxWidth: "58ch" }}>
-            No monthly charge, no card on file, no subscription to cancel. Your balance sits
-            against your phone number and is deducted when you book.
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        title="Pay once. Come back whenever you like."
+        lead="No monthly charge, no card on file, no subscription to cancel. Your balance sits against your phone number and comes off when you book."
+      />
 
-      <section className="surface-paper">
-        <div className="wrap sec--tight">
-          <div className="rule-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
+      <section className="wrap sec--tight" aria-labelledby="packs-title">
+        <SectionHead
+          id="packs-title"
+          title="Session packs"
+          intro="Buy through the desk on WhatsApp and pay by mobile money or card."
+        />
+        <ul className="check-list mb-10">
+          {PACK_BASICS.map((item) => (
+            <li key={item}>
+              <Check />
+              {item}
+            </li>
+          ))}
+        </ul>
+        <ol className="rows">
           {PACKS.map((p) => (
-            <article
-              key={p.id}
-              className={p.featured ? "stack pack--featured" : "stack"}
-              style={{ gap: 14, padding: "clamp(28px, 3vw, 40px) clamp(24px, 3vw, 34px)" }}
-            >
-              <span className="label">{p.featured ? "Most people choose this" : p.validity}</span>
-              <h2 className="h2" style={{ fontSize: 32 }}>{p.name}</h2>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-                <span className="data--lg">{p.price}</span>
-                <span className="data" style={{ color: "var(--s-meta)" }}>{p.perSession}</span>
+            <li className="row" key={p.id} aria-labelledby={`pack-${p.id}`}>
+              <span className="row__lead">
+                <span className="row__count">{p.sessions.split(" ")[0]}</span>×{" "}
+                {p.sessionMinutes} min
+              </span>
+              <div className="row__main">
+                <h3 className="h3" id={`pack-${p.id}`}>
+                  {p.name}
+                </h3>
+                {p.featured && <span className="tag">Most people choose this</span>}
+                <p className="small">{p.description}</p>
+                <p className="meta">
+                  {p.validity}
+                  {p.extras.length > 0 && `. Adds ${p.extras.join(" and ").toLowerCase()}.`}
+                </p>
               </div>
-              <p className="data" style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--s-meta)" }}>
-                {p.sessions} · {p.validity} · {p.saving}
-              </p>
-              <p className="meta" style={{ fontSize: 16 }}>{p.description}</p>
-              <ul style={{ listStyle: "none", margin: 0, padding: "18px 0 0", borderTop: "1px solid var(--s-rule)", display: "flex", flexDirection: "column", gap: 8 }}>
-                {p.includes.map((i) => (
-                  <li key={i} style={{ fontSize: 15, lineHeight: 1.5 }}>{i}</li>
-                ))}
-              </ul>
-              <Link className={p.featured ? "btn" : "btn btn--outline"} href="/book" style={{ marginTop: "auto", alignSelf: "flex-start" }}>
+              <div className="price">
+                {p.price}
+                <span className="pack-per">
+                  <span>{p.perSession}</span>
+                  <strong>{p.saving}</strong>
+                </span>
+              </div>
+              <Link
+                className={p.featured ? "btn row__cta" : "btn btn--outline row__cta"}
+                href={`/contact?subject=pack&pack=${p.id}`}
+              >
                 {p.cta}
               </Link>
-            </article>
+            </li>
           ))}
-          </div>
-        </div>
+        </ol>
       </section>
 
-      <section className="surface-dim">
-        <div className="wrap sec--tight grid-2">
-          <div className="stack" id="voucher">
-            <p className="label">{GIFT_VOUCHER.name}</p>
-            <h2 className="h2" style={{ fontSize: "clamp(28px, 3.6vw, 42px)" }}>
-              For someone who will not book this for themselves.
+      <section className="surface-stone" aria-label="Gifts and companies">
+        <div className="wrap sec offer-grid">
+          <article className="offer" id="voucher" aria-labelledby="voucher-title">
+            <h2 className="h2" id="voucher-title">
+              A gift voucher, for someone who will not book this for themselves.
             </h2>
-            <p className="meta" style={{ fontSize: 16, maxWidth: "52ch" }}>{GIFT_VOUCHER.description}</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 4 }}>
-              {GIFT_VOUCHER.amounts.map((a) => (
-                <span key={a} className="badge" style={{ padding: "14px 20px", fontSize: 14 }}>{a}</span>
-              ))}
+            <p className="body">{GIFT_VOUCHER.description}</p>
+            <div className="stack--tight">
+              <span className="meta">Choose an amount</span>
+              <div className="offer__amounts">
+                {GIFT_VOUCHER.values.map((value) => (
+                  <Link
+                    key={value}
+                    className="chip"
+                    href={`/contact?subject=voucher&amount=${value}`}
+                  >
+                    {formatRWF(value)}
+                  </Link>
+                ))}
+              </div>
             </div>
-            <Link className="btn" href="/contact?subject=voucher" style={{ alignSelf: "flex-start", marginTop: 8 }}>
+            <Link className="btn" href="/contact?subject=voucher">
               {GIFT_VOUCHER.cta}
             </Link>
-          </div>
+          </article>
 
-          <div className="stack" id="corporate" style={{ borderLeft: "1px solid var(--s-rule)", paddingLeft: "clamp(0px, 3vw, 48px)" }}>
-            <p className="label">{CORPORATE.name}</p>
-            <h2 className="h2" style={{ fontSize: "clamp(28px, 3.6vw, 42px)" }}>
-              A staff benefit people actually use.
+          <article className="offer" id="corporate" aria-labelledby="corporate-title">
+            <h2 className="h2" id="corporate-title">
+              For companies: a staff benefit people actually use.
             </h2>
-            <p className="meta" style={{ fontSize: 16, maxWidth: "52ch" }}>{CORPORATE.description}</p>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-              {CORPORATE.points.map((c) => (
-                <li key={c} style={{ borderTop: "1px solid var(--s-rule)", paddingTop: 10, fontSize: 15, lineHeight: 1.55 }}>{c}</li>
+            <p className="body">{CORPORATE.description}</p>
+            <ul className="check-list">
+              {CORPORATE.points.map((point) => (
+                <li key={point}>
+                  <Check />
+                  {point}
+                </li>
               ))}
             </ul>
-            <Link className="btn btn--outline" href="/contact?subject=corporate" style={{ alignSelf: "flex-start", marginTop: 8 }}>
+            <Link className="btn btn--outline" href="/contact?subject=corporate">
               {CORPORATE.cta}
             </Link>
-          </div>
+          </article>
         </div>
       </section>
 
-      <section className="surface-paper">
-        <div className="wrap sec--tight">
-          <Faq items={PACK_FAQS} label="How packs work" />
-        </div>
-      </section>
+      <div className="wrap sec">
+        <Faq name="packs-faq" items={PACK_FAQS} title="How packs work.">
+          <Link className="tlink" href="/sessions">
+            Compare single sessions
+          </Link>
+        </Faq>
+      </div>
     </main>
   )
 }

@@ -1,10 +1,10 @@
 "use client"
 
-import Bloom from "@/components/Bloom"
-
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "@/components/Link"
+import OpenStatus from "@/components/OpenStatus"
+import { Close } from "@/components/icons"
 import { SITE_CONFIG } from "@/data/site"
 
 const LOGO = "/amari-horizontal.svg"
@@ -12,7 +12,7 @@ const LOGO = "/amari-horizontal.svg"
 const LINKS = [
   { label: "The Space", href: "/space" },
   { label: "Sessions", href: "/sessions" },
-  { label: "Packs", href: "/packs" },
+  { label: "Packs & gifts", href: "/packs" },
   { label: "Journal", href: "/journal" },
   { label: "Contact", href: "/contact" },
 ]
@@ -21,61 +21,73 @@ const MOBILE_LINKS = [
   { label: "Home", href: "/" },
   ...LINKS,
   { label: "My bookings", href: "/account" },
-  { label: "Book a session", href: "/book" },
 ]
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
   const closeRef = useRef<HTMLButtonElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  useEffect(() => {
     if (!menuOpen) return
+    const toggle = toggleRef.current
     const prev = document.body.style.overflow
     document.body.style.overflow = "hidden"
-    const t = setTimeout(() => closeRef.current?.focus(), 50)
+    closeRef.current?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false)
-      if (e.key === "Tab") {
-        const items = menuRef.current?.querySelectorAll<HTMLElement>(
-          "a[href], button:not([disabled])",
-        )
-        if (!items?.length) return
-        const first = items[0]
-        const last = items[items.length - 1]
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault()
-          last.focus()
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault()
-          first.focus()
-        }
+      if (e.key !== "Tab") return
+      const items = menuRef.current?.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled])",
+      )
+      if (!items?.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
       }
     }
     window.addEventListener("keydown", onKey)
     return () => {
-      clearTimeout(t)
       document.body.style.overflow = prev
       window.removeEventListener("keydown", onKey)
-      toggleRef.current?.focus()
+      toggle?.focus()
     }
   }, [menuOpen])
 
   useEffect(() => setMenuOpen(false), [pathname])
 
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return null
+
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
-
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return null
+  // Already booking: a second "Book" button would only compete with the flow.
+  const showCta = !pathname.startsWith("/book")
 
   return (
     <>
-      <nav className="nav surface-paper" aria-label="Primary">
+      <nav
+        className="nav surface-paper"
+        aria-label="Primary"
+        data-scrolled={scrolled || undefined}
+      >
         <div className="nav__inner">
           <Link className="nav__brand" href="/" aria-label="Amari — home">
-            <img className="nav__lockup" src={LOGO} alt="Amari" />
+            <img className="nav__lockup" src={LOGO} alt="" width={140} height={56} />
           </Link>
 
           <div className="nav__links">
@@ -89,21 +101,26 @@ export default function Nav() {
                 {label}
               </Link>
             ))}
-            <Link className="nav__cta" href="/book">
-              Book a session
-            </Link>
+            {showCta && (
+              <Link className="btn btn--sm nav__cta" href="/book">
+                Book a session
+              </Link>
+            )}
           </div>
 
           <div className="nav__actions">
-            <Link className="nav__cta" href="/book">
-              Book
-            </Link>
+            {showCta && (
+              <Link className="btn btn--sm" href="/book">
+                Book
+              </Link>
+            )}
             <button
               ref={toggleRef}
               className="nav__toggle"
               onClick={() => setMenuOpen(true)}
               aria-label="Open menu"
               aria-expanded={menuOpen}
+              aria-controls="site-menu"
             >
               <span />
               <span />
@@ -115,18 +132,15 @@ export default function Nav() {
       {menuOpen && (
         <div
           ref={menuRef}
+          id="site-menu"
           className="menu surface-paper"
           role="dialog"
           aria-modal="true"
-          aria-label="Navigation"
+          aria-label="Menu"
         >
           <div className="menu__header">
-            <Link
-              href="/"
-              aria-label="Amari — home"
-              onClick={() => setMenuOpen(false)}
-            >
-              <img className="menu__logo" src={LOGO} alt="Amari" />
+            <Link href="/" aria-label="Amari — home" onClick={() => setMenuOpen(false)}>
+              <img className="menu__logo" src={LOGO} alt="" width={115} height={46} />
             </Link>
             <button
               ref={closeRef}
@@ -134,7 +148,7 @@ export default function Nav() {
               onClick={() => setMenuOpen(false)}
               aria-label="Close menu"
             >
-              &times;
+              <Close />
             </button>
           </div>
           <ul className="menu__list">
@@ -147,18 +161,24 @@ export default function Nav() {
                   onClick={() => setMenuOpen(false)}
                 >
                   {label}
-                  <Bloom />
                 </Link>
               </li>
             ))}
           </ul>
+          <Link
+            className="btn btn--block menu__cta"
+            href="/book"
+            onClick={() => setMenuOpen(false)}
+          >
+            Book a session
+          </Link>
           <div className="menu__footer">
-            {SITE_CONFIG.address.street} · {SITE_CONFIG.address.neighborhood} ·{" "}
-            {SITE_CONFIG.address.plusCode}
-            <br />
-            {SITE_CONFIG.hours.weekdays}
-            <br />
-            {SITE_CONFIG.contact.phone}
+            <OpenStatus />
+            <span>
+              {SITE_CONFIG.address.street}, {SITE_CONFIG.address.neighborhood},{" "}
+              {SITE_CONFIG.address.city}
+            </span>
+            <span className="data">{SITE_CONFIG.contact.phone}</span>
           </div>
         </div>
       )}

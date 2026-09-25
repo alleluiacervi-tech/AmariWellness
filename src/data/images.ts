@@ -21,6 +21,15 @@
    the single image a first-time visitor most needs to see.
    ─────────────────────────────────────────────────────────────── */
 
+/* ─── BEFORE LAUNCH ─────────────────────────────────────────────
+   `suiteMood`, `lounge` and `readingLamp` are hot-linked from
+   i.pinimg.com. Pinterest's CDN is not a licence to reuse and those
+   URLs can vanish without notice. Download the originals you have the
+   rights to (the supplier's product shot for the hero), put them in
+   /public/images, and point these entries at the local paths —
+   next/image will then serve them without any remotePatterns entry.
+   ─────────────────────────────────────────────────────────────── */
+
 export interface SiteImage {
   src: string
   alt: string

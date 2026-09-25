@@ -16,54 +16,76 @@ node scripts/push.mjs "commit message"
 
 It writes a single commit to `alleluiacervi-tech/AmariWellness` through the GitHub Git Data API. The token is read from the macOS Keychain (service `amari-github-pat`), never from a file — never write a token into the repo. Once real git is available, use it instead and delete `scripts/push.mjs`.
 
+## Design direction
+
+The site follows Anthropic's **frontend-design** skill, vendored at `.claude/skills/frontend-design/` (Claude Code loads it automatically; read it before any visual work). Applied to this brief:
+
+- **Time is the product, so the gold dial is the one bold element.** The home hero is an instrument (`HeroTime`): pick 15, 30 or 60 minutes and the dial sweeps to it while name, price and the book button follow. Everywhere else the dial is a small quiet glyph beside a duration.
+- **Everything around it stays quiet.** Headlines are plain upright serif — never one word picked out in italic or colour. Sentence case everywhere; no all-caps eyebrows, and a label only when it tells the reader something the heading does not. No `→` or bloom appended to link and button text. No details strung together with middle dots — use commas, line breaks or a small table (`Hours`).
+- **Structure is information.** Comparisons are rows (`.rows` / `.row`), not grids of identical cards. Numbers and rules only where the content is a sequence (the first-visit timeline, booking steps).
+- **Stillness is the brand.** One page-load moment per page (`.enter`, `.enter-media`, and on home the dial's sweep). No scroll-in effects and no hover lifts; motion otherwise only answers the visitor (dial change, accordion, booking steps).
+- The home headline steps down line by line, the way the chair reclines. That is the type's one flourish.
+
 ## Project Structure
 
 This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
 
-- `src/app/layout.tsx` - Root layout: `<html>`/`<body>` shell, `next/font` (DM Sans + Lora) wiring, global `Nav`/`Footer`, and the default site `metadata`
-- `src/app/globals.css` - Global CSS entrypoint and Tailwind CSS v4 import (`@import 'tailwindcss'`), plus the hand-written design-token system (`@theme`, CSS custom properties, component classes)
-- `src/app/page.tsx`, `src/app/*/page.tsx` - Route pages (App Router file-based routing): `/`, `/space`, `/sessions`, `/packs`, `/book`, `/contact`. Static/content pages are Server Components with a `metadata` export; pages needing interactivity (`book`, `contact`) are `'use client'` and get their `metadata` from a sibling `layout.tsx` instead, since a client page cannot export `metadata` itself
-- `src/app/not-found.tsx` - Global 404 (Next.js special file convention)
-- `src/components/` - Shared UI. Anything using hooks/browser APIs/event handlers is marked `'use client'` at the top (`Nav`, `Link`, `Figure`, `Reveal`, `Accordion`, `SessionRecommender`, `StickyBook`, `Footer`); purely presentational components (`Placeholder`, `LocationCard`) stay Server Components even though they're rendered from client trees
-- `src/components/Link.tsx` - Thin wrapper around `next/link` that adds a smooth scroll-to-top on non-hash navigations
-- `src/components/Figure.tsx` - Wraps `next/image` (`fill` + `sizes`) with a loading shimmer and an error fallback card
-- `src/data/*.ts` - Typed static content (site info, sessions, prepaid packs, image set) consumed by the pages. `journal.ts` holds six written articles that no route currently renders
-- `public/` - Static assets served from `/`, e.g. `amari-horizontal.svg`
-- `next.config.mjs` - `images.remotePatterns` (allows `images.unsplash.com`) and `turbopack.root`
-- `postcss.config.mjs` - Wires the Tailwind v4 PostCSS plugin (`@tailwindcss/postcss`)
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
+- `src/app/layout.tsx` - Root layout: `<html>`/`<body>` shell, `next/font` wiring (DM Sans, DM Mono, Instrument Serif), global `Nav`/`Footer`, default `metadata` + `viewport`, and the site-wide LocalBusiness JSON-LD
+- `src/app/globals.css` - The whole design system: Tailwind v4 import, `@theme`, then `@layer base` (tokens, surfaces, element defaults) and `@layer components` (every pattern, grouped by where it lives)
+- `src/app/page.tsx`, `src/app/*/page.tsx` - Routes: `/`, `/space`, `/sessions`, `/packs`, `/book`, `/contact`, `/journal`, `/journal/[slug]`, `/account` (sample returning-guest view), `/admin` + `/admin/login` (back-office design preview). Every page is a Server Component with its own `metadata`
+- `src/app/not-found.tsx` - Global 404
+- `src/app/icon.svg`, `apple-icon.tsx`, `opengraph-image.tsx`, `manifest.ts`, `robots.ts`, `sitemap.ts` - Metadata file conventions. The share card and apple icon are generated at build time from `src/assets/` (lotus mark + OFL brand fonts as TTF)
+- `src/lib/metadata.ts` - `pageMetadata({ title, description, path })`. Use it for every page: Next merges metadata shallowly, so a page that sets only `title` inherits the root's share card, canonical included
+- `src/components/` - Shared UI (see below)
+- `src/components/admin/` - The back-office preview; self-contained, with its own scoped `admin.css`. Nav and Footer hide themselves on `/admin`
+- `src/data/*.ts` - Typed static content: `site.ts` (address, hours + numeric `schedule`, visit steps, hygiene protocol, FAQs, shelf), `sessions.ts`, `packs.ts`, `journal.ts`, `images.ts`. Change a price or an hour here and it updates everywhere
+- `public/` - Static assets, e.g. `amari-horizontal.svg`
+- `next.config.mjs` - `images.remotePatterns` (Unsplash, Pinterest — see the launch note in `images.ts`) and `turbopack.root`
+
+### Components
+
+Client (`'use client'`): `Nav` (scroll state, accessible menu dialog), `Footer`, `Link` (next/link + smooth scroll-to-top), `Figure` (next/image + shimmer + fallback), `HeroTime` (the home hero's time instrument), `OpenStatus` (live open/closed in Kigali time), `BookingFlow`, `ContactForm`.
+
+Server: `PageHeader` (how every inner page opens), `SectionHead`, `CtaBand` (how every inner page ends), `Faq` (native `<details>`), `Dial` (a duration as a gold arc against the hour; `sweep` once per page), `Hours`, `PaymentMethods` / `PaymentMark`, `Bloom` (brand mark only — 404, image fallback, notices), `icons`.
 
 ## Dependencies
 
-- Framework: Next.js (App Router, Turbopack) on React 19 / React DOM 19
+- Framework: Next.js 16 (App Router, Turbopack) on React 19 / React DOM 19
 - Styling: Tailwind CSS v4 via `@tailwindcss/postcss`
-- Formatting: oxfmt
+- Formatting: oxfmt — note that 0.2.0 can relocate comments to the top of a file; check the diff after running it
 
 ## Styling
 
-This project uses **Tailwind CSS v4** through the `@tailwindcss/postcss` plugin configured in `postcss.config.mjs`. `src/app/globals.css` imports Tailwind with `@import 'tailwindcss';` and defines the brand palette/type scale in an `@theme` block plus plain CSS custom properties. Use Tailwind utility classes directly in JSX; put global CSS or Tailwind v4 theme customization in `src/app/globals.css`. This project does not need a `tailwind.config.js`.
+Tailwind CSS v4 through `@tailwindcss/postcss`; no `tailwind.config.js`. All hand-written CSS lives in `src/app/globals.css` **inside `@layer base` or `@layer components`** — never unlayered. Unlayered CSS beats every layer, so it would silently override Tailwind utilities; kept in layers, a utility class on an element (`justify-between`, `items-start`, `mr-3`) always wins. Use utilities for one-off layout tweaks; add a component class when a pattern repeats. Inline `style` is only for values computed from data (a meter width).
 
-Fonts (DM Sans, DM Mono, Lora) are loaded via `next/font/google` in `src/app/layout.tsx` and exposed as the `--font-dm-sans` / `--font-dm-mono` / `--font-lora` CSS variables, which `globals.css`'s `--font-sans` / `--font-mono` / `--font-serif` tokens build on — don't reintroduce a manual Google Fonts `@import` or hardcode a literal font-family string (a literal loses `next/font`'s metric-matched fallback); reference `var(--font-sans)` / `var(--font-serif)` / `var(--font-mono)` instead.
+Fonts are loaded with `next/font/google` in `layout.tsx` as `--font-dm-sans` / `--font-dm-mono` / `--font-instrument-serif`, which the `--font-sans` / `--font-mono` / `--font-serif` tokens build on. Don't reintroduce a Google Fonts `@import` or a literal font-family string.
 
 ### The three type roles
 
 One rule, and it is worth keeping:
 
-- **Lora (serif)** — the room speaks. Display headlines, page titles, quotes, session names.
-- **DM Sans** — you speak. Body copy, UI, labels, navigation, buttons.
-- **DM Mono** — the machine speaks. Durations, prices, times, reference codes, step numbers, Plus Codes. Nothing that isn't data.
+- **Instrument Serif** — the room speaks. Headlines, page titles, session and pack names, quotes. Upright; italic only for a whole line (a session's one-line intro), never for an accent word.
+- **DM Sans** — you speak. Body copy, UI, labels and eyebrows, navigation, buttons.
+- **DM Mono** — the machine speaks. Durations, prices, clock times, reference codes, Plus Codes — the numbers themselves. Dates, "a session", "Saves…" and every other word stay in DM Sans.
+
+One scale: `.display` (home hero only), `.h1` (page titles), `.h2` (section titles), `.h3` (card titles), `.h4` (list items, FAQ questions), `.lead`, `.body`, `.small`, `.meta`, `.label`. Don't set a heading's `font-size` locally.
 
 ### Surfaces
 
-Sections declare a surface class — `.surface-paper`, `.surface-dim`, `.surface-dark`, `.surface-deep` — and every component reads the resulting `--s-ground` / `--s-ink` / `--s-body` / `--s-meta` / `--s-rule` / `--s-accent` / `--s-focus` tokens rather than a literal colour. Buttons, rules, form fields and focus rings then come out correct on any ground automatically. **Never hardcode a colour in a component**; if a component looks wrong on a surface, the surface's tokens are what to fix.
+Sections declare a ground — `.surface-paper` (default), `.surface-stone` (one band per page at most), `.surface-deep` (the one dark block, closing the home page); `.surface-dim` and `.surface-mist` exist for small panels. Separate sections with space, not alternating bands — and every component reads the resulting `--s-*` tokens (`ground`, `raised`, `sunk`, `field`, `ink`, `body`, `meta`, `rule`, `rule-2`, `label`, `accent`, `em`, `focus`, `btn`, `btn-ink`, `btn-hover`). Buttons, fields, rules and focus rings come out right on any ground automatically. **Never hardcode a colour in a component**; if something looks wrong on a surface, fix that surface's tokens.
 
-Gold (`--gold`) means one thing: the machine. Durations, prices, controls, timings. It is not a decorative bullet. Sage marks the human and organic. On light grounds use `--gold-text` / `--sage-text`, which clear AA; the raw brand tones only pass on dark.
+Gold means one thing: the machine — durations, prices, the dial, the timeline. Sage marks the human and organic. On light grounds the accent resolves to `--gold-text`, which clears AA; raw `--gold` only passes on dark.
 
-Pages whose first screen is a dark full-bleed surface mark it with `data-dark-top`; `Nav` reads that from the DOM and floats transparent over it until it scrolls past.
+### Shape and motion
+
+- One radius pair (`--r-sm` 4px for buttons and slots, `--r-md` 8px for cards) and one signature shape: **the arch** (`.arch`, large top-left radius), used on the hero and page-header photographs only.
+- One entrance per page (`.enter` on the header copy, `.enter-media` on its photo; on home, the dial's sweep). Hover changes colour, never position. Nothing loops except the image shimmer while loading. Everything respects `prefers-reduced-motion`.
 
 ## Routing & Server/Client boundary
 
-Keep the client boundary as low (as close to the leaf) as possible: a page should only be `'use client'` if it directly uses a hook, browser API, or inline event handler — interactivity already encapsulated in a child component (e.g. `Figure`, `Reveal`, `SessionRecommender`) doesn't require the parent page to also be a Client Component. When a page must be `'use client'` and also needs SEO `metadata`, put the `metadata` export in a sibling `layout.tsx` instead (see `src/app/contact/`), since Next.js forbids exporting `metadata` from a Client Component module. A client page reading `useSearchParams()` must be wrapped in `<Suspense>` (see `src/app/book/page.tsx`).
+Keep the client boundary at the leaf: pages are Server Components, and interactivity lives in the component that needs it. A client component that reads `useSearchParams()` must sit inside `<Suspense>`; give the Suspense a fallback that renders the **same component with default props** (see `book/page.tsx` and `contact/page.tsx`), so the static HTML contains the real UI rather than a blank gap, and the URL's presets take over on hydration.
+
+Links elsewhere on the site preset these flows: `/book?session=quick|half|full`, `/contact?subject=booking|pack|voucher|corporate|other` (plus `&pack=<id>` or `&amount=<RWF>` to draft the message).
 
 <!-- BEGIN:nextjs-agent-rules -->
 

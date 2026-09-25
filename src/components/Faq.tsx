@@ -1,38 +1,50 @@
-"use client"
-
-import { useState } from "react"
+import type { ReactNode } from "react"
 
 export interface FaqItem {
   q: string
   a: string
 }
 
-export default function Faq({ items, label }: { items: FaqItem[]; label: string }) {
-  const [open, setOpen] = useState<number | null>(null)
-
+/**
+ * Native <details>: keyboard, screen-reader and no-JS support for free.
+ * A shared `name` makes the group exclusive — opening one closes the rest.
+ */
+export default function Faq({
+  items,
+  label,
+  title,
+  name,
+  children,
+}: {
+  items: FaqItem[]
+  label?: string
+  title: ReactNode
+  name: string
+  children?: ReactNode
+}) {
+  const titleId = `${name}-title`
   return (
-    <div className="rail">
-      <div className="rail__label">
-        <p className="label">{label}</p>
+    <section className="faq-section" aria-labelledby={titleId}>
+      <div className="faq-section__head">
+        {label && <p className="label">{label}</p>}
+        <h2 className="h2" id={titleId}>
+          {title}
+        </h2>
+        {children}
       </div>
-      <div className="rail__body">
-        {items.map((f, i) => {
-          const isOpen = open === i
-          return (
-            <div key={f.q} className="faq">
-              <button
-                className="faq__q"
-                onClick={() => setOpen(isOpen ? null : i)}
-                aria-expanded={isOpen}
-              >
-                {f.q}
-                <span className="faq__sign" aria-hidden="true">{isOpen ? "−" : "+"}</span>
-              </button>
-              {isOpen && <p className="faq__a">{f.a}</p>}
+      <div className="faq">
+        {items.map((item) => (
+          <details className="faq__item" name={name} key={item.q}>
+            <summary className="faq__q">
+              {item.q}
+              <span className="faq__icon" aria-hidden="true" />
+            </summary>
+            <div className="faq__a">
+              <p>{item.a}</p>
             </div>
-          )
-        })}
+          </details>
+        ))}
       </div>
-    </div>
+    </section>
   )
 }
