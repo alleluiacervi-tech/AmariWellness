@@ -5,6 +5,7 @@ import { clients } from "./people"
 import { sessionTypes } from "./catalog"
 
 export const paymentMethodValues = ["momo", "airtel", "card", "other"] as const
+export type PaymentMethod = (typeof paymentMethodValues)[number]
 export const paymentStatusValues = ["pending", "succeeded", "failed", "refunded"] as const
 
 /**
