@@ -38,9 +38,13 @@ This is the canonical project structure. Start with task-relevant files below. O
 - `src/lib/metadata.ts` - `pageMetadata({ title, description, path })`. Use it for every page: Next merges metadata shallowly, so a page that sets only `title` inherits the root's share card, canonical included
 - `src/components/` - Shared UI (see below)
 - `src/components/admin/` - The back-office preview; self-contained, with its own scoped `admin.css`. Nav and Footer hide themselves on `/admin`
-- `src/data/*.ts` - Typed static content: `site.ts` (address, hours + numeric `schedule`, visit steps, hygiene protocol, FAQs, shelf), `sessions.ts`, `packs.ts`, `journal.ts`, `images.ts`. Change a price or an hour here and it updates everywhere
+- `src/data/*.ts` - Typed static content: `site.ts` (address, hours + numeric `schedule`, visit steps, hygiene protocol, FAQs, shelf), `sessions.ts`, `packs.ts`, `journal.ts`, `images.ts`. **Being retired**: this is the same content Phase 1.1 seeded into the database (`pnpm db:seed`); pages still read from these files until Phase 1.3 switches them to the database, at which point these files go away
+- `src/server/db/` - The backend (Phase 1, see `CLAUDE.md`). `schema/*.ts` is the data model — read `docs/database.md` before touching it, especially before changing `bookings` or `ledger_entries`. `migrations/` includes hand-written SQL (`0001_constraints_and_guards.sql`) alongside `drizzle-kit generate` output; both apply through `pnpm db:migrate`. `client.ts` is the app's DB connection (`server-only`-guarded — never imported by a script run outside Next, which needs its own connection; see the comment in `seed.ts`)
+- `src/server/auth/password.ts` - scrypt password hashing for staff logins (Node's built-in `node:crypto`, no native dependency)
 - `public/` - Static assets, e.g. `amari-horizontal.svg`
 - `next.config.mjs` - `images.remotePatterns` (Unsplash, Pinterest — see the launch note in `images.ts`) and `turbopack.root`
+- `docs/database.md` - How to run Postgres locally, what each migration script does, and what the money/booking constraints actually guarantee
+- `docs/phase-0-decisions.md` - The owner's decision pack: payment-provider comparison, draft policies, go-live checklist
 
 ### Components
 
