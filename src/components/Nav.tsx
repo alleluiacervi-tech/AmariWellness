@@ -71,7 +71,7 @@ export default function Nav() {
 
   useEffect(() => setMenuOpen(false), [pathname])
 
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return null
+  if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/staff")) return null
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
