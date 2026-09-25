@@ -20,6 +20,7 @@ import { priceForSlot } from "../availability/pricing"
 import { createHold, SlotTakenError } from "../availability/createHold"
 import { beginSandboxPayment, confirmSandboxPayment, PaymentNotPendingError } from "../availability/confirm"
 import { encodeQrPayload } from "../qr"
+import { notifyAfterResponse } from "../notify/dispatch"
 
 export async function getSlotsAction(dateISO: string, sessionTypeUuid: string): Promise<Slot[]> {
   const location = await getLocation()
@@ -116,6 +117,10 @@ export async function confirmPaymentAction(_prev: ConfirmPaymentState, formData:
     if (err instanceof PaymentNotPendingError) return { error: err.message }
     throw err
   }
+
+  // Email + WhatsApp with the QR, sent after this response so a slow
+  // provider never holds up the confirmation screen.
+  notifyAfterResponse(booking.id, "booking_confirmed")
 
   // Rendered server-side (same QRCode.toDataURL pattern staff TOTP
   // enrollment already uses) so the qrcode package never needs to ship

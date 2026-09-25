@@ -39,6 +39,7 @@ const TABLES_IN_DELETE_ORDER = [
   "pack_purchases",
   "company_invoices",
   "company_members",
+  "notifications",
   "bookings",
   "messages",
   "promo_codes",

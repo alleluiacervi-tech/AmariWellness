@@ -51,6 +51,7 @@ export default async function StaffBookingsPage() {
                   canCancel={can(staff.role, "bookings.cancel")}
                   canRefund={can(staff.role, "payments.refund")}
                   canDiscount={can(staff.role, "discounts.apply")}
+                  canCheckIn={can(staff.role, "bookings.checkIn")}
                 />
               ))}
             </ul>

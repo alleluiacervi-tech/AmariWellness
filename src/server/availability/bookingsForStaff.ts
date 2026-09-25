@@ -1,7 +1,18 @@
 import "server-only"
 import { and, asc, eq, gte, inArray, lt } from "drizzle-orm"
 import { db } from "../db/client"
-import { bookings, clients, payments, sessionTypes, suites, type BookingStatus, type PaymentMethod } from "../db/schema"
+import {
+  bookings,
+  clients,
+  notifications,
+  payments,
+  sessionTypes,
+  suites,
+  type BookingStatus,
+  type NotificationChannel,
+  type NotificationTemplate,
+  type PaymentMethod,
+} from "../db/schema"
 import { getLocation } from "../db/content"
 import { kigaliWallTimeToUtc } from "./slots"
 
@@ -18,6 +29,8 @@ export type StaffBookingRow = {
   paymentStatus: string | null
   paymentMethod: PaymentMethod | null
   paymentAmountRwf: number | null
+  /** The latest message sent about this booking on each channel — so the desk can see who didn't get their QR. */
+  lastMessages: { channel: NotificationChannel; template: NotificationTemplate; status: "sent" | "failed" }[]
 }
 
 /**
@@ -65,6 +78,25 @@ export async function getBookingsForDay(dateISO: string): Promise<StaffBookingRo
     if (isBetter) paymentByBooking.set(payment.bookingId, payment)
   }
 
+  const messageRows = await db
+    .select({
+      bookingId: notifications.bookingId,
+      channel: notifications.channel,
+      template: notifications.template,
+      status: notifications.status,
+    })
+    .from(notifications)
+    .where(inArray(notifications.bookingId, bookingIds))
+    .orderBy(asc(notifications.createdAt))
+  // Ordered oldest first, so the last write per booking+channel wins.
+  const lastMessages = new Map<string, Map<NotificationChannel, StaffBookingRow["lastMessages"][number]>>()
+  for (const m of messageRows) {
+    if (!m.bookingId) continue
+    const byChannel = lastMessages.get(m.bookingId) ?? new Map()
+    byChannel.set(m.channel, { channel: m.channel, template: m.template, status: m.status })
+    lastMessages.set(m.bookingId, byChannel)
+  }
+
   return rows.map((row) => {
     const payment = paymentByBooking.get(row.id)
     return {
@@ -72,6 +104,7 @@ export async function getBookingsForDay(dateISO: string): Promise<StaffBookingRo
       paymentStatus: payment?.status ?? null,
       paymentMethod: payment?.method ?? null,
       paymentAmountRwf: payment?.amountRwf ?? null,
+      lastMessages: [...(lastMessages.get(row.id)?.values() ?? [])],
     }
   })
 }

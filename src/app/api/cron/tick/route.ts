@@ -1,20 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { db } from "@/server/db/client"
-import { expireStaleHolds } from "@/server/availability/expireStaleHolds"
+import { defaultNotifyDeps } from "@/server/notify/bookingMessages"
+import { runTick } from "@/server/jobs/tick"
 
 /**
- * The one background-job entry point Phase 1.4 wires up: expiring stale
- * payment holds (see `src/server/availability/expireStaleHolds.ts`).
- * Phase 1.5/1.6 extend this same handler with reminders, no-show
- * marking, and pack/voucher expiry (see CLAUDE.md's Phase 1 checklist) —
- * one scheduled entry point rather than one route per job. Reading
- * `request.headers` here is itself what makes this route request-time
- * rather than prerendered (see the Route Handlers guide's "Good to
- * know" on what stops prerendering).
+ * The one background-job entry point (see `src/server/jobs/tick.ts` for
+ * what runs): expiring stale payment holds, marking no-shows, completing
+ * finished sessions, and sending the 24-hour and 2-hour reminders.
+ * Phase 1.6 and Phase 2 (pack/voucher expiry) extend `runTick` rather
+ * than adding a route per job. Reading `request.headers` here is itself
+ * what makes this route request-time rather than prerendered (see the
+ * Route Handlers guide's "Good to know" on what stops prerendering).
  *
- * Call with `Authorization: Bearer $CRON_SECRET` — a Vercel Cron job
- * config (once one is added) or a manual call while testing. `.env.example`
- * documents `CRON_SECRET` under "Background jobs".
+ * Call every few minutes with `Authorization: Bearer $CRON_SECRET` — a
+ * scheduler (Vercel Cron, once one is configured) or a manual call while
+ * testing. `.env.example` documents `CRON_SECRET` under "Background jobs".
+ * Responds 500 if any job failed, so a scheduler's own alerting notices.
  */
 function authorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
@@ -24,8 +25,9 @@ function authorized(request: NextRequest): boolean {
 
 async function tick(request: NextRequest) {
   if (!authorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const expiredHolds = await expireStaleHolds(db)
-  return NextResponse.json({ ok: true, expiredHolds })
+  const result = await runTick(db, defaultNotifyDeps())
+  if (result.errors.length) console.error("[cron/tick] job errors:", result.errors)
+  return NextResponse.json({ ok: result.errors.length === 0, ...result }, { status: result.errors.length ? 500 : 200 })
 }
 
 export async function GET(request: NextRequest) {

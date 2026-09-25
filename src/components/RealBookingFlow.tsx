@@ -99,6 +99,7 @@ export default function RealBookingFlow({
   const [phase, setPhase] = useState<Phase>(client ? (client.needsHealthAck ? "health" : "pay") : "details")
   const [name, setName] = useState(client?.name ?? "")
   const [phone, setPhone] = useState(client?.phone ?? "")
+  const [email, setEmail] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("momo")
   const [reference, setReference] = useState("")
   const [qrDataUrl, setQrDataUrl] = useState<string | undefined>()
@@ -336,6 +337,7 @@ export default function RealBookingFlow({
                   action={(formData) => {
                     setName(String(formData.get("name") ?? ""))
                     setPhone(String(formData.get("phone") ?? ""))
+                    setEmail(String(formData.get("email") ?? ""))
                     otpAction(formData)
                     setPhase("code")
                   }}
@@ -359,6 +361,19 @@ export default function RealBookingFlow({
                       />
                       <span className="field__hint">We&rsquo;ll text a 6-digit code to this number.</span>
                     </label>
+                    <label className="field">
+                      <span className="field__label">Email (optional)</span>
+                      <input
+                        className="input"
+                        name="email"
+                        type="email"
+                        maxLength={200}
+                        autoComplete="email"
+                        defaultValue={email}
+                        placeholder="you@example.com"
+                      />
+                      <span className="field__hint">Your confirmation and QR code come by WhatsApp. Add an email to get a copy there too.</span>
+                    </label>
                   </div>
                   <div className="booking__actions">
                     <button type="button" className="btn btn--outline" onClick={() => go(2)}>
@@ -375,6 +390,7 @@ export default function RealBookingFlow({
                 <form className="stack" action={verifyAction}>
                   <input type="hidden" name="phone" value={otpState.phone ?? phone} />
                   <input type="hidden" name="name" value={name} />
+                  <input type="hidden" name="email" value={email} />
                   {otpState.devCode && (
                     <div className="notice">
                       <Bloom />

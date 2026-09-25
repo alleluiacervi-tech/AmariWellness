@@ -36,6 +36,7 @@ import { priceForSlot } from "../availability/pricing"
 import { findOrCreateClient } from "../people/findOrCreateClient"
 import { refundBooking, RefundError } from "../ledger/refund"
 import { applyDiscount, DiscountError } from "../ledger/discount"
+import { notifyAfterResponse } from "../notify/dispatch"
 
 export type ActionState = { error?: string; ok?: boolean }
 
@@ -108,6 +109,9 @@ export async function createWalkInBooking(_prev: ActionState, formData: FormData
     entityId: booking.id,
     after: { clientName, sessionType: sessionType.slug, startAt: startAt.toISOString(), priceRwf, paymentMethod },
   })
+  // A walk-in with a phone gets the same WhatsApp confirmation and QR as
+  // an online booking; one with no phone or email is simply skipped.
+  notifyAfterResponse(booking.id, "booking_confirmed")
   revalidatePath("/", "layout")
   return { ok: true }
 }
@@ -144,6 +148,9 @@ export async function cancelBooking(_prev: ActionState, formData: FormData): Pro
     after: { status: "cancelled" },
     reason,
   })
+  // Only a booking the client believes is happening needs a message — a
+  // held one was never confirmed to them in the first place.
+  if (before.status === "confirmed") notifyAfterResponse(bookingId, "booking_cancelled")
   revalidatePath("/", "layout")
   return { ok: true }
 }
@@ -174,6 +181,7 @@ export async function refundBookingAction(_prev: ActionState, formData: FormData
     after: { status: "cancelled", refundedRwf: parsed.data.amountRwf },
     reason: parsed.data.reason,
   })
+  notifyAfterResponse(booking.id, "booking_cancelled", { refundedRwf: parsed.data.amountRwf })
   revalidatePath("/", "layout")
   return { ok: true }
 }

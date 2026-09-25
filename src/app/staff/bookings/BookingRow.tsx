@@ -7,7 +7,9 @@ import {
   refundBookingAction,
   type ActionState,
 } from "@/server/admin/bookingActions"
+import { checkInAction, type CheckInState } from "@/server/admin/floorActions"
 import type { StaffBookingRow } from "@/server/availability/bookingsForStaff"
+import { bookingReference } from "@/lib/booking"
 
 const initial: ActionState = {}
 
@@ -24,6 +26,15 @@ function formatTime(d: Date) {
   return new Date(d).toLocaleTimeString("en-RW", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Kigali" })
 }
 
+const CHANNEL_LABELS = { email: "Email", whatsapp: "WhatsApp" } as const
+const TEMPLATE_LABELS = {
+  booking_confirmed: "confirmation",
+  booking_rescheduled: "new time",
+  booking_cancelled: "cancellation",
+  reminder_24h: "24-hour reminder",
+  reminder_2h: "2-hour reminder",
+} as const
+
 function formatRWF(amount: number) {
   return `${amount.toLocaleString("en-RW")} RWF`
 }
@@ -33,12 +44,15 @@ export default function BookingRow({
   canCancel,
   canRefund,
   canDiscount,
+  canCheckIn,
 }: {
   booking: StaffBookingRow
   canCancel: boolean
   canRefund: boolean
   canDiscount: boolean
+  canCheckIn: boolean
 }) {
+  const [checkInState, checkInFormAction, checkInPending] = useActionState<CheckInState, FormData>(checkInAction, {})
   const [cancelState, cancelAction, cancelPending] = useActionState(cancelBooking, initial)
   const [refundState, refundAction, refundPending] = useActionState(refundBookingAction, initial)
   const [discountState, discountAction, discountPending] = useActionState(applyDiscountAction, initial)
@@ -62,11 +76,27 @@ export default function BookingRow({
             {formatRWF(booking.priceAtBookingRwf)}
             {booking.paymentStatus ? ` — payment ${booking.paymentStatus}` : ""}
           </span>
+          <span className="meta font-mono">{bookingReference(booking.id)}</span>
+          {booking.lastMessages.length > 0 && (
+            <span className="meta">
+              {booking.lastMessages
+                .map((m) => `${CHANNEL_LABELS[m.channel]} ${TEMPLATE_LABELS[m.template]} ${m.status === "sent" ? "sent" : "FAILED"}`)
+                .join(", ")}
+            </span>
+          )}
         </div>
         <span className="tag">{STATUS_LABELS[booking.status]}</span>
       </div>
 
       <div className="cluster items-start">
+        {canCheckIn && booking.status === "confirmed" && (
+          <form action={checkInFormAction}>
+            <input type="hidden" name="bookingId" value={booking.id} />
+            <button className="btn btn--sm" type="submit" disabled={checkInPending}>
+              {checkInPending ? "Checking in…" : "Check in"}
+            </button>
+          </form>
+        )}
         {canCancel && isVoidable && (
           <form className="cluster items-start" action={cancelAction}>
             <input type="hidden" name="bookingId" value={booking.id} />
@@ -106,6 +136,12 @@ export default function BookingRow({
         )}
       </div>
 
+      {checkInState.result && !checkInState.result.ok && (
+        <p className="small" role="alert" style={{ color: "var(--alarm)" }}>
+          {checkInState.result.message}
+        </p>
+      )}
+      {checkInState.result?.ok && <p className="small">Checked in to {checkInState.result.preview.suiteName}.</p>}
       {cancelState.error && (
         <p className="small" role="alert" style={{ color: "var(--alarm)" }}>
           {cancelState.error}

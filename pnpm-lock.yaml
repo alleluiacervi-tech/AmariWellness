@@ -17,12 +17,18 @@ importers:
       jose:
         specifier: ^6.2.12
         version: 6.2.12
+      jsqr:
+        specifier: ^1.4.0
+        version: 1.4.0
       next:
         specifier: ^16.3.5
         version: 16.3.5(@types/node@22.20.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
       react:
         specifier: ^19.0.0
         version: 19.3.0
@@ -42,6 +48,9 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.2
+      '@types/pngjs':
+        specifier: ^6.0.5
+        version: 6.0.5
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
@@ -54,15 +63,12 @@ importers:
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
-      jsqr:
-        specifier: ^1.4.0
-        version: 1.4.0
       oxfmt:
         specifier: ^0.2.0
         version: 0.2.0
-      qrcode:
-        specifier: ^1.5.4
-        version: 1.5.4
+      pngjs:
+        specifier: ^7.0.0
+        version: 7.0.0
       tailwindcss:
         specifier: ^4.0.0
         version: 4.3.3
@@ -1026,6 +1032,9 @@ packages:
   '@types/node@22.20.2':
     resolution: {integrity: sha512-xlvWf4Vs9n1PEVYwP1n4vvG07M6y8WgvJ2t0vbrWTmijsIHp1cS+uJ2kMIRdY3nHZK0nCYKrPeD171+SzF4/zw==}
 
+  '@types/pngjs@6.0.5':
+    resolution: {integrity: sha512-0k5eKfrA83JOZPppLtS2C7OUtyNAl2wKNxfyYl9Q5g9lPkgBl/9hNyAu6HuEH2J4XmIv2znEpkDd0SaZVxW6iQ==}
+
   '@types/qrcode@1.5.6':
     resolution: {integrity: sha512-te7NQcV2BOvdj2b1hCAHzAoMNuj65kNBMz0KBaxM6c3VGBOhU0dURQKOtH8CFNI/dsKkwlv32p26qYQTWoB5bw==}
 
@@ -1506,6 +1515,10 @@ packages:
   pngjs@5.0.0:
     resolution: {integrity: sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==}
     engines: {node: '>=10.13.0'}
+
+  pngjs@7.0.0:
+    resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
+    engines: {node: '>=14.19.0'}
 
   postcss@8.5.23:
     resolution: {integrity: sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==}
@@ -2311,6 +2324,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/pngjs@6.0.5':
+    dependencies:
+      '@types/node': 22.20.2
+
   '@types/qrcode@1.5.6':
     dependencies:
       '@types/node': 22.20.2
@@ -2680,6 +2697,8 @@ snapshots:
   picomatch@4.0.7: {}
 
   pngjs@5.0.0: {}
+
+  pngjs@7.0.0: {}
 
   postcss@8.5.23:
     dependencies:
