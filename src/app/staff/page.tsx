@@ -1,9 +1,15 @@
 import { desc, eq } from "drizzle-orm"
+import Link from "next/link"
 import { requireStaffPage } from "@/server/auth/dal"
 import { logoutAction } from "@/server/auth/actions"
 import { db } from "@/server/db/client"
 import { activityLog } from "@/server/db/schema"
-import { ROLE_LABELS } from "@/server/auth/roles"
+import { can, ROLE_LABELS } from "@/server/auth/roles"
+
+const SECTIONS = [
+  { href: "/staff/sessions", label: "Sessions & pricing", capability: "prices.edit" as const },
+  { href: "/staff/location", label: "Location & hours", capability: "hours.edit" as const },
+]
 
 export const metadata = {
   title: "Amari workspace",
@@ -11,11 +17,13 @@ export const metadata = {
 }
 
 /**
- * A minimal, real, database-backed shell — proof that the auth chain
- * works end to end (session, roles, activity log), not the admin
- * interface itself. `src/components/admin/AdminDashboard.tsx` is the
- * polished design preview P1.3 wires up to real data next; this page
- * is deliberately plain until then. See CLAUDE.md Phase 1.3.
+ * The real, database-backed staff home — still plainly styled rather
+ * than the polished `src/components/admin/AdminDashboard.tsx` preview,
+ * but no longer just a proof of the auth chain: "Manage" links to the
+ * real admin pages Phase 1.3 part 2 is building out one at a time, each
+ * gated by the same `can()` check its own page and Server Actions
+ * enforce again — this list is a convenience, not the access control.
+ * See CLAUDE.md Phase 1.3.
  */
 export default async function StaffHomePage() {
   const staff = await requireStaffPage()
@@ -45,10 +53,25 @@ export default async function StaffHomePage() {
           </form>
         </div>
 
-        <p className="body">
-          This is a placeholder. Phase 1.3 wires real bookings, prices, hours and content into an admin interface
-          here — see <span className="font-mono">CLAUDE.md</span>.
-        </p>
+        <div className="stack--tight">
+          <h2 className="h4">Manage</h2>
+          {SECTIONS.filter((s) => can(staff.role, s.capability)).length === 0 ? (
+            <p className="meta">Nothing your role can edit yet — check with the owner.</p>
+          ) : (
+            <ul className="stack--tight" style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {SECTIONS.filter((s) => can(staff.role, s.capability)).map((s) => (
+                <li key={s.href}>
+                  <Link className="tlink" href={s.href}>
+                    {s.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="meta">
+            More of the back office arrives through Phase 1.3 — see <span className="font-mono">CLAUDE.md</span>.
+          </p>
+        </div>
 
         <div className="stack--tight">
           <h2 className="h4">Your recent activity</h2>
