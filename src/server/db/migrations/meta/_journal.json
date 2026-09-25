@@ -15,6 +15,13 @@
       "when": 1790317895694,
       "tag": "0001_constraints_and_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790317895695,
+      "tag": "0002_staff_login_security",
+      "breakpoints": true
     }
   ]
 }

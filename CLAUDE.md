@@ -212,7 +212,16 @@ Sub-phases below match the P1.x tasks worked in order; tick a line only once it'
 
   > **Note for future sessions:** this cloud sandbox's own Postgres (used to build and test the above) does not persist between sessions — only what's committed to git does (the schema, migrations, and seed script). A fresh session picks up exactly where P1.1 left off by running `pnpm db:migrate && pnpm db:seed` against a database it creates itself (see `docs/database.md`), not by expecting yesterday's local data to still be there. A real, persistent database is a Phase 0 hosting decision (managed Postgres — Neon or similar).
 
-- [ ] **P1.2** — Staff login with two-step verification; roles (Owner, Manager, Front desk, Finance); activity log wired to real actions
+**P1.2 — Staff auth, roles, activity log. Complete.**
+- [x] Staff sign-in (email + password) with mandatory two-step verification (RFC 6238 TOTP, from `node:crypto` — no external auth dependency); first login walks through QR enrollment, every login after just asks for the 6-digit code
+- [x] A generated TOTP secret is only written to the account once a correct code proves the visitor actually captured it — a wrong first code leaves the account re-enrollable, not half-configured
+- [x] Login lockout: 5 failed attempts (password or code) locks the account for 15 minutes; the counter resets on a lock and on a success
+- [x] Sessions are database-backed, not just a signed cookie: the JWT names a row in `staff_auth_sessions`, so revoking a session (sign-out) actually ends it server-side, not just clears client state
+- [x] Roles (Owner, Manager, Front desk, Finance) and the full capability table from §3, enforced by a single `can(role, capability)` source of truth — no "ledger.edit"/"income.edit" capability exists for any role, so the income-immutability rule can't be accidentally coded around later
+- [x] Activity log wired to real actions (login, MFA enrollment, logout so far); a Data Access Layer (`requireStaffPage`/`requireStaffAction`) so every future admin page and Server Action re-checks auth itself, not just the page that renders the link to it
+- [x] `/staff/*` protected by both an optimistic proxy redirect (fast, no DB call) and an authoritative database check in the DAL (the one that actually decides access)
+- [x] 43 unit/integration tests (TOTP against official RFC 4226 test vectors, password hashing, lockout against a real Postgres, role table) plus a 15-assertion end-to-end run against a real built-and-started server covering the whole flow: unauthenticated redirect, wrong password, first-login enrollment, wrong code, correct code, session survives reload, sign-out, re-protection, second login without re-enrollment
+
 - [ ] **P1.3** — Admin editing: session types and prices (price history), hours, holidays, suites, maintenance blocks, address, contact and social links (WhatsApp and Instagram in the footer), website text and photos, FAQs
 - [ ] **P1.3** — Website reads all content and prices from the database instead of `src/data/*.ts`
 - [ ] **P1.4** — Live availability engine: payment holds, 15-minute turnover (database-level no-double-booking rule already built in P1.1)
@@ -267,4 +276,5 @@ Sub-phases below match the P1.x tasks worked in order; tick a line only once it'
 | 2026-09-25 | A | frontend-design skill installed and applied; Phase A marked complete | `546e19b` |
 | 2026-09-25 | — | This plan saved to `CLAUDE.md` | (this commit) |
 | 2026-09-25 | 0 | Owner decision pack: payment provider comparison, draft cancellation and privacy policies, go-live checklist | see `docs/phase-0-decisions.md` |
-| 2026-09-25 | P1.1 | Full schema (30 tables), the no-double-booking and append-only-ledger database guarantees, migrations, seed script, 12 passing tests against a real Postgres | (this commit) |
+| 2026-09-25 | P1.1 | Full schema (30 tables), the no-double-booking and append-only-ledger database guarantees, migrations, seed script, 12 passing tests against a real Postgres | `21a960e` |
+| 2026-09-25 | P1.2 | Staff sign-in with mandatory TOTP two-step verification, roles and the full capability table, database-backed sessions, login lockout, activity log, a Data Access Layer every future admin page and action goes through; 43 unit tests plus a 15-assertion end-to-end run | (this commit) |

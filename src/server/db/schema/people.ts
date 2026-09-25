@@ -57,6 +57,9 @@ export const staffUsers = pgTable("staff_users", {
   passwordHash: text("password_hash").notNull(),
   /** Base32 TOTP secret; null until the staff member has enrolled two-step verification. */
   totpSecret: text("totp_secret"),
+  /** Reset to 0 on a successful login; a lockout (see `lockedUntil`) is applied well before this could be brute-forced. */
+  failedAttempts: integer("failed_attempts").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
