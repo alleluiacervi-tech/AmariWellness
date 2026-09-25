@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "@/components/Link"
-import { Arrow, ArrowLeft } from "@/components/icons"
+import { ArrowLeft } from "@/components/icons"
 import { ARTICLES, isoDate } from "@/data/journal"
 import { SESSIONS } from "@/data/sessions"
 import { OPEN_GRAPH_BASE } from "@/lib/metadata"
@@ -69,15 +69,14 @@ export default async function ArticlePage({ params }: Props) {
               </p>
             </div>
             <Link className="btn" href="/book">
-              Book a session <Arrow />
+              Book a session
             </Link>
           </div>
           <Link className="row-link" href={`/journal/${next.slug}`}>
             <span className="stack--tight">
-              <span className="label">Read next</span>
+              <span className="meta">Read next</span>
               <span className="h3">{next.title}</span>
             </span>
-            <Arrow />
           </Link>
         </footer>
       </article>

@@ -45,25 +45,23 @@ export default async function OpenGraphImage() {
         >
           <div
             style={{
-              fontSize: 17,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
+              fontSize: 22,
               color: "#446f55",
             }}
           >
-            Private massage suites · Kigali
+            Private massage suites in Kimihurura, Kigali
           </div>
           <div style={{ display: "flex", flexDirection: "column", fontFamily: "Instrument Serif", fontSize: 96, lineHeight: 0.98, letterSpacing: "-0.02em" }}>
             <span>A chair.</span>
             <span>A quiet room.</span>
-            <span style={{ fontStyle: "italic", color: "#3d6b52" }}>Time to think.</span>
+            <span>Time to think.</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             <img src={markSrc} width={54} height={54} alt="" />
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ fontFamily: "Instrument Serif", fontSize: 32, lineHeight: 1 }}>Amari</span>
               <span style={{ fontFamily: "DM Mono", fontSize: 17, color: "#7d6210" }}>
-                15 · 30 · 60 min — from {SESSIONS[0].price}
+                15, 30 or 60 minutes, from {SESSIONS[0].price}
               </span>
             </div>
           </div>

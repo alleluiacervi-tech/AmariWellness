@@ -25,7 +25,7 @@ export function pageMetadata({
     alternates: { canonical: path },
     openGraph: {
       ...OPEN_GRAPH_BASE,
-      title: `${title} · Amari Kigali`,
+      title: `${title} | Amari Kigali`,
       description,
       url: path,
     },

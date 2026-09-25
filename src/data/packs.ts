@@ -18,9 +18,19 @@ export interface SessionPack {
   saving: string
   description: string
   includes: string[]
+  /** What this pack adds beyond the basics every pack shares (see PACK_BASICS). */
+  extras: string[]
   cta: string
   featured: boolean
 }
+
+/** True of every pack, so it is said once. */
+export const PACK_BASICS = [
+  'Use them whenever you like before they expire',
+  'Balance kept against your phone number',
+  'Shareable with anyone you bring',
+  'Lounge access on every visit',
+]
 
 export const PACKS: SessionPack[] = [
   {
@@ -31,6 +41,7 @@ export const PACKS: SessionPack[] = [
     perSession: `${formatRWF(13400)} a session`,
     perSessionNumber: 13400,
     sessionMinutes: 30,
+    extras: [],
     sessions: '5 × 30-minute sessions',
     validity: 'Valid for 2 months',
     saving: `Saves ${formatRWF(8000)}`,
@@ -53,6 +64,7 @@ export const PACKS: SessionPack[] = [
     perSession: `${formatRWF(12700)} a session`,
     perSessionNumber: 12700,
     sessionMinutes: 30,
+    extras: ['Priority booking on evening slots'],
     sessions: '10 × 30-minute sessions',
     validity: 'Valid for 3 months',
     saving: `Saves ${formatRWF(23000)}`,
@@ -76,6 +88,7 @@ export const PACKS: SessionPack[] = [
     perSession: `${formatRWF(21200)} a session`,
     perSessionNumber: 21200,
     sessionMinutes: 60,
+    extras: ['Priority booking on evening slots', 'A named locker held for your visits'],
     sessions: '10 × 60-minute sessions',
     validity: 'Valid for 3 months',
     saving: `Saves ${formatRWF(38000)}`,

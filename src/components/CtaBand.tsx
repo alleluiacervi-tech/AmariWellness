@@ -1,18 +1,18 @@
 import type { ReactNode } from "react"
 import Link from "@/components/Link"
-import { Arrow } from "@/components/icons"
 
 /** The end of an inner page: one clear next step, never a dead end. */
 export default function CtaBand({
-  label,
+  name,
   title,
   body,
   href = "/book",
   cta = "Book a session",
   secondary,
-  surface = "surface-mist",
+  surface = "surface-stone",
 }: {
-  label: string
+  /** Accessible name for the region; not shown. */
+  name: string
   title: ReactNode
   body?: ReactNode
   href?: string
@@ -21,16 +21,15 @@ export default function CtaBand({
   surface?: string
 }) {
   return (
-    <section className={surface} aria-label={label}>
+    <section className={surface} aria-label={name}>
       <div className="wrap cta-band__inner">
         <div className="cta-band__copy">
-          <p className="label">{label}</p>
           <h2 className="h2">{title}</h2>
           {body && <p className="body">{body}</p>}
         </div>
         <div className="cluster">
           <Link className="btn" href={href}>
-            {cta} <Arrow />
+            {cta}
           </Link>
           {secondary}
         </div>

@@ -1,11 +1,9 @@
-import Bloom from "@/components/Bloom"
 import CtaBand from "@/components/CtaBand"
 import Dial from "@/components/Dial"
 import Faq from "@/components/Faq"
 import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
-import Reveal from "@/components/Reveal"
-import { Arrow, Check } from "@/components/icons"
+import { Check } from "@/components/icons"
 import { INCLUDED, OFF_PEAK, SESSIONS } from "@/data/sessions"
 import { PACKS } from "@/data/packs"
 import { CHAIR_FAQS } from "@/data/site"
@@ -41,13 +39,8 @@ export default function SessionsPage() {
   return (
     <main id="main-content">
       <PageHeader
-        label="The sessions"
-        title={
-          <>
-            Find your own <em>kind of pause.</em>
-          </>
-        }
-        lead="Fifteen minutes or a whole hour. The same private suite, with a little more time to make it yours."
+        title="Fifteen minutes, or a whole hour."
+        lead="The same private suite and the same chair, with a little more time to make it yours. Quiet-hours prices apply on weekdays before 16:00."
       >
         <nav className="jump-links" aria-label="Jump to a session">
           {SESSIONS.map((s) => (
@@ -58,9 +51,9 @@ export default function SessionsPage() {
         </nav>
       </PageHeader>
 
-      <div className="surface-mist">
-        <div className="wrap inclusions">
-          <span className="label">Always included</span>
+      <div className="wrap">
+        <div className="inclusions">
+          <span className="label">Every session includes</span>
           <ul>
             {INCLUDED.map((item) => (
               <li key={item}>
@@ -70,9 +63,7 @@ export default function SessionsPage() {
             ))}
           </ul>
         </div>
-      </div>
 
-      <div className="wrap">
         {SESSIONS.map((s) => (
           <article
             className="programme"
@@ -83,8 +74,7 @@ export default function SessionsPage() {
             <div className="programme__dial">
               <Dial minutes={s.durationMinutes} size="lg" />
             </div>
-            <Reveal className="programme__body">
-              <p className="label">{s.label}</p>
+            <div className="programme__body">
               <h2 className="h2" id={`${s.id}-title`}>
                 {s.name}
               </h2>
@@ -98,7 +88,7 @@ export default function SessionsPage() {
                   </li>
                 ))}
               </ul>
-            </Reveal>
+            </div>
             <aside className="programme__aside" aria-label={`${s.name} prices`}>
               <dl className="programme__prices">
                 <div>
@@ -110,12 +100,9 @@ export default function SessionsPage() {
                   <dd>{s.offPeakPrice}</dd>
                 </div>
               </dl>
-              <p className="meta">
-                Per person, in your own suite. Quiet hours run{" "}
-                {OFF_PEAK.window.replace("Monday to Friday", "weekdays")}.
-              </p>
+              <p className="meta">Per person, in your own suite.</p>
               <Link className="btn btn--block" href={`/book?session=${s.id}`}>
-                Book {s.durationMinutes} minutes <Arrow />
+                Book {s.durationMinutes} minutes
               </Link>
             </aside>
           </article>
@@ -123,40 +110,27 @@ export default function SessionsPage() {
       </div>
 
       <CtaBand
-        label="Make it a little ritual"
-        title={
-          <>
-            More time for yourself, <em>for less.</em>
-          </>
-        }
+        name="Session packs"
+        title="Coming back? Pay less per session."
         body={`Prepaid packs bring a half hour down to ${halfHourPack.perSession}. Shareable, no subscription, no card on file.`}
         href="/packs"
         cta="See session packs"
         secondary={
           <Link className="tlink" href="/packs#voucher">
-            Or give one as a gift <Bloom />
+            Give one as a gift
           </Link>
         }
       />
 
       <div className="wrap sec">
-        <Faq
-          name="sessions-faq"
-          items={QUESTIONS}
-          label="Before you settle in"
-          title={
-            <>
-              Honest answers, <em>before you book.</em>
-            </>
-          }
-        >
+        <Faq name="sessions-faq" items={QUESTIONS} title="Before you book.">
           <p className="small">
-            If you have a medical condition, talk to your doctor first — then
-            talk to us. We would rather turn a booking away than give you a
-            session you should not have.
+            If you have a medical condition, talk to your doctor first, then to
+            us. We would rather turn a booking away than give you a session you
+            should not have.
           </p>
           <Link className="tlink" href="/contact">
-            Ask the desk <Bloom />
+            Ask the desk
           </Link>
         </Faq>
       </div>

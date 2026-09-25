@@ -1,11 +1,9 @@
-import Bloom from "@/components/Bloom"
 import Faq from "@/components/Faq"
 import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
-import Reveal from "@/components/Reveal"
 import SectionHead from "@/components/SectionHead"
-import { Arrow, Check } from "@/components/icons"
-import { CORPORATE, GIFT_VOUCHER, PACKS } from "@/data/packs"
+import { Check } from "@/components/icons"
+import { CORPORATE, GIFT_VOUCHER, PACK_BASICS, PACKS } from "@/data/packs"
 import { formatRWF } from "@/data/sessions"
 import { PACK_FAQS } from "@/data/site"
 import { pageMetadata } from "@/lib/metadata"
@@ -21,74 +19,65 @@ export default function PacksPage() {
   return (
     <main id="main-content">
       <PageHeader
-        surface="surface-stone"
-        label="Packs · Vouchers · Companies"
-        title={
-          <>
-            Pay once. <em>Come back whenever you like.</em>
-          </>
-        }
+        title="Pay once. Come back whenever you like."
         lead="No monthly charge, no card on file, no subscription to cancel. Your balance sits against your phone number and comes off when you book."
       />
 
-      <section className="wrap sec" aria-labelledby="packs-title">
+      <section className="wrap sec--tight" aria-labelledby="packs-title">
         <SectionHead
           id="packs-title"
-          label="Session packs"
-          title={
-            <>
-              Prepaid, shareable, <em>never recurring.</em>
-            </>
-          }
-          intro="Buy through the desk on WhatsApp and pay by mobile money or card. Bring whoever you like — the balance is yours, not a named guest's."
+          title="Session packs"
+          intro="Buy through the desk on WhatsApp and pay by mobile money or card."
         />
-        <Reveal className="pack-grid" stagger>
+        <ul className="check-list mb-10">
+          {PACK_BASICS.map((item) => (
+            <li key={item}>
+              <Check />
+              {item}
+            </li>
+          ))}
+        </ul>
+        <ol className="rows">
           {PACKS.map((p) => (
-            <article
-              key={p.id}
-              className={p.featured ? "pack pack--featured" : "pack"}
-              aria-labelledby={`pack-${p.id}`}
-            >
-              <div className="pack__head">
-                <span className="label">{p.validity}</span>
+            <li className="row" key={p.id} aria-labelledby={`pack-${p.id}`}>
+              <span className="row__lead">
+                <span className="row__count">{p.sessions.split(" ")[0]}</span>×{" "}
+                {p.sessionMinutes} min
+              </span>
+              <div className="row__main">
+                <h3 className="h3" id={`pack-${p.id}`}>
+                  {p.name}
+                </h3>
                 {p.featured && <span className="tag">Most people choose this</span>}
-              </div>
-              <h3 className="h3" id={`pack-${p.id}`}>
-                {p.name}
-              </h3>
-              <div className="pack__price">
-                <p className="price">{p.price}</p>
-                <p className="pack__per">
-                  <span>{p.perSession}</span>
-                  <strong>{p.saving}</strong>
+                <p className="small">{p.description}</p>
+                <p className="meta">
+                  {p.validity}
+                  {p.extras.length > 0 && `. Adds ${p.extras.join(" and ").toLowerCase()}.`}
                 </p>
               </div>
-              <p className="small">{p.description}</p>
-              <ul className="check-list">
-                {p.includes.map((item) => (
-                  <li key={item}>
-                    <Check />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="price">
+                {p.price}
+                <span className="pack-per">
+                  <span>{p.perSession}</span>
+                  <strong>{p.saving}</strong>
+                </span>
+              </div>
               <Link
-                className={p.featured ? "btn btn--block" : "btn btn--outline btn--block"}
+                className={p.featured ? "btn row__cta" : "btn btn--outline row__cta"}
                 href={`/contact?subject=pack&pack=${p.id}`}
               >
-                {p.cta} <Arrow />
+                {p.cta}
               </Link>
-            </article>
+            </li>
           ))}
-        </Reveal>
+        </ol>
       </section>
 
-      <section className="surface-dim" aria-label="Gifts and companies">
+      <section className="surface-stone" aria-label="Gifts and companies">
         <div className="wrap sec offer-grid">
           <article className="offer" id="voucher" aria-labelledby="voucher-title">
-            <p className="label">{GIFT_VOUCHER.name}</p>
             <h2 className="h2" id="voucher-title">
-              For someone who will not book this <em>for themselves.</em>
+              A gift voucher, for someone who will not book this for themselves.
             </h2>
             <p className="body">{GIFT_VOUCHER.description}</p>
             <div className="stack--tight">
@@ -106,14 +95,13 @@ export default function PacksPage() {
               </div>
             </div>
             <Link className="btn" href="/contact?subject=voucher">
-              {GIFT_VOUCHER.cta} <Arrow />
+              {GIFT_VOUCHER.cta}
             </Link>
           </article>
 
           <article className="offer" id="corporate" aria-labelledby="corporate-title">
-            <p className="label">{CORPORATE.name}</p>
             <h2 className="h2" id="corporate-title">
-              A staff benefit <em>people actually use.</em>
+              For companies: a staff benefit people actually use.
             </h2>
             <p className="body">{CORPORATE.description}</p>
             <ul className="check-list">
@@ -125,25 +113,16 @@ export default function PacksPage() {
               ))}
             </ul>
             <Link className="btn btn--outline" href="/contact?subject=corporate">
-              {CORPORATE.cta} <Arrow />
+              {CORPORATE.cta}
             </Link>
           </article>
         </div>
       </section>
 
       <div className="wrap sec">
-        <Faq
-          name="packs-faq"
-          items={PACK_FAQS}
-          label="How packs work"
-          title={
-            <>
-              The small print, <em>in plain words.</em>
-            </>
-          }
-        >
+        <Faq name="packs-faq" items={PACK_FAQS} title="How packs work.">
           <Link className="tlink" href="/sessions">
-            Compare single sessions <Bloom />
+            Compare single sessions
           </Link>
         </Faq>
       </div>

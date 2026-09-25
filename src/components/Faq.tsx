@@ -17,7 +17,7 @@ export default function Faq({
   children,
 }: {
   items: FaqItem[]
-  label: string
+  label?: string
   title: ReactNode
   name: string
   children?: ReactNode
@@ -26,7 +26,7 @@ export default function Faq({
   return (
     <section className="faq-section" aria-labelledby={titleId}>
       <div className="faq-section__head">
-        <p className="label">{label}</p>
+        {label && <p className="label">{label}</p>}
         <h2 className="h2" id={titleId}>
           {title}
         </h2>

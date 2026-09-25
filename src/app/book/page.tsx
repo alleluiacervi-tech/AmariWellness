@@ -14,7 +14,6 @@ export default function BookPage() {
     <main id="main-content" className="wrap booking">
       <div className="booking__head">
         <div className="booking__intro enter">
-          <p className="label">A little time. Entirely yours.</p>
           <h1 className="h1">Book your quiet moment.</h1>
         </div>
         <div className="stack--tight items-start">

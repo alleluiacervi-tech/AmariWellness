@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_CONFIG.url),
   title: {
     default: TITLE,
-    template: "%s · Amari Kigali",
+    template: "%s | Amari Kigali",
   },
   description:
     "Private automated massage suites in Kimihurura, Kigali. No therapist, no noise — you close the door yourself. Sessions from 8,000 RWF.",

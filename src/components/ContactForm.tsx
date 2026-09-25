@@ -9,7 +9,7 @@
 
 import { useState, type FormEvent } from "react"
 import { useSearchParams } from "next/navigation"
-import { Arrow, Mail } from "@/components/icons"
+import { Mail } from "@/components/icons"
 import { SITE_CONFIG } from "@/data/site"
 import { PACKS } from "@/data/packs"
 import { formatRWF } from "@/data/sessions"
@@ -18,7 +18,7 @@ const SUBJECTS = {
   booking: "A booking question",
   pack: "Buying a session pack",
   voucher: "A gift voucher",
-  corporate: "For companies · a quote",
+  corporate: "A quote for a company",
   other: "Something else",
 } as const
 type SubjectKey = keyof typeof SUBJECTS
@@ -80,7 +80,6 @@ export function ContactForm({
   return (
     <form className="form-card" id="message" onSubmit={onSubmit}>
       <div className="stack--tight">
-        <p className="label">Send a message</p>
         <h2 className="h3">Ask us anything.</h2>
         <p className="meta">
           Nothing is stored here — your message opens in WhatsApp or your mail
@@ -147,7 +146,7 @@ export function ContactForm({
 
       <div className="form-actions">
         <button className="btn" type="submit" name="via" value="whatsapp">
-          Send on WhatsApp <Arrow />
+          Send on WhatsApp
         </button>
         <button className="btn btn--outline" type="submit" name="via" value="email">
           <Mail className="icon" /> Send by email

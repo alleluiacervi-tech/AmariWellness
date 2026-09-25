@@ -14,7 +14,8 @@ export default function PageHeader({
   surface = "surface-paper",
   children,
 }: {
-  label: ReactNode
+  /** Only when it tells the reader something the title does not. */
+  label?: ReactNode
   title: ReactNode
   lead?: ReactNode
   media?: SiteImage
@@ -25,7 +26,7 @@ export default function PageHeader({
     <header className={`page-head ${media ? "page-head--media" : ""} ${surface}`}>
       <div className="wrap page-head__inner">
         <div className="page-head__copy enter">
-          <p className="label">{label}</p>
+          {label && <p className="label">{label}</p>}
           <h1 className="h1">{title}</h1>
           {lead && <p className="lead">{lead}</p>}
           {children && <div className="page-head__actions">{children}</div>}

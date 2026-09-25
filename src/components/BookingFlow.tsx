@@ -16,7 +16,7 @@ import {
   PAYMENT_METHODS,
   type PaymentMethod,
 } from "@/components/PaymentMethods"
-import { Arrow, ArrowLeft, Calendar, Check } from "@/components/icons"
+import { Calendar, Check } from "@/components/icons"
 import {
   SESSIONS,
   OFF_PEAK,
@@ -185,7 +185,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
                       <span className="option__body">
                         <span className="h4">{s.name}</span>
                         <span className="meta">
-                          {s.duration} · {s.label}
+                          {s.summary}
                         </span>
                       </span>
                       <span className="option__price">{s.price}</span>
@@ -196,7 +196,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
               </fieldset>
               <div className="booking__actions">
                 <button type="button" className="btn" onClick={() => go(2)}>
-                  Continue to day &amp; time <Arrow />
+                  Continue to day &amp; time
                 </button>
               </div>
             </>
@@ -262,7 +262,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
               </fieldset>
               <div className="booking__actions">
                 <button type="button" className="btn btn--outline" onClick={() => go(1)}>
-                  <ArrowLeft /> Back
+                  Back
                 </button>
                 <button
                   type="button"
@@ -270,7 +270,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
                   disabled={!date || !slot}
                   onClick={() => go(3)}
                 >
-                  Continue to your details <Arrow />
+                  Continue to your details
                 </button>
               </div>
             </>
@@ -350,10 +350,10 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
               </div>
               <div className="booking__actions">
                 <button type="button" className="btn btn--outline" onClick={() => go(2)}>
-                  <ArrowLeft /> Back
+                  Back
                 </button>
                 <button className="btn" type="submit">
-                  Preview confirmation <Arrow />
+                  Preview confirmation
                 </button>
               </div>
             </form>
@@ -369,7 +369,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
                 <div className="ticket__top">
                   <div className="cluster justify-between">
                     <span className="label">Booking reference</span>
-                    <span className="tag tag--outline">Preview · not booked</span>
+                    <span className="tag tag--outline">Preview, not booked</span>
                   </div>
                   <span className="ticket__ref">{reference}</span>
                 </div>
@@ -392,7 +392,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
                   <div>
                     <dt>Time</dt>
                     <dd>
-                      {slot} · {session.durationMinutes} min
+                      {slot}, {session.durationMinutes} min
                     </dd>
                   </div>
                   <div>
@@ -430,7 +430,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
                   Plan another
                 </button>
                 <Link className="tlink" href="/">
-                  Back to Amari <Bloom />
+                  Back to the homepage
                 </Link>
               </div>
             </div>
@@ -462,7 +462,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
             </div>
             <div className="summary__row">
               <dt>Suite</dt>
-              <dd>Private · 1 guest</dd>
+              <dd>Private, one guest</dd>
             </div>
           </dl>
           <div className="summary__total">
@@ -483,7 +483,7 @@ export function BookingFlow({ initialSession = FEATURED_SESSION_ID }: { initialS
             <strong>{session.name}</strong>
             <span>
               {date ? dateLabel(date) : "Choose a day"}
-              {slot ? ` · ${slot}` : ""}
+              {slot ? `, ${slot}` : ""}
             </span>
           </span>
           <span className="price">{total}</span>

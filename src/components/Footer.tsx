@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation"
 import PaymentMethods from "@/components/PaymentMethods"
 import OpenStatus from "@/components/OpenStatus"
+import Hours from "@/components/Hours"
 import Link from "@/components/Link"
 import { SITE_CONFIG } from "@/data/site"
 
@@ -39,7 +40,7 @@ const COLUMNS = [
 ]
 
 export default function Footer() {
-  const { address, contact, hours } = SITE_CONFIG
+  const { address, contact } = SITE_CONFIG
   const pathname = usePathname()
   const year = new Date().getFullYear()
 
@@ -92,11 +93,7 @@ export default function Footer() {
               <br />
               {address.city}, {address.country}
             </address>
-            <p className="footer__hours">
-              {hours.weekdays}
-              <br />
-              {hours.weekends}
-            </p>
+            <Hours />
             <OpenStatus />
           </div>
 

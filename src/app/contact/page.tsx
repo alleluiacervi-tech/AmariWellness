@@ -1,8 +1,8 @@
 import { Suspense } from "react"
-import Bloom from "@/components/Bloom"
 import ContactFormFromParams, { ContactForm } from "@/components/ContactForm"
 import Link from "@/components/Link"
 import OpenStatus from "@/components/OpenStatus"
+import Hours from "@/components/Hours"
 import PageHeader from "@/components/PageHeader"
 import { ArrowOut, Chat, Mail, Phone } from "@/components/icons"
 import { SITE_CONFIG } from "@/data/site"
@@ -23,12 +23,7 @@ export default function ContactPage() {
   return (
     <main id="main-content">
       <PageHeader
-        label={`Contact · ${address.neighborhood}`}
-        title={
-          <>
-            Two minutes from <em>the roundabout.</em>
-          </>
-        }
+        title="Two minutes from the roundabout."
         lead={`${address.street}, just off the ${address.neighborhood} roundabout. ${address.parking}, and the door is right off the road.`}
         media={IMAGES.architecture}
       >
@@ -36,7 +31,7 @@ export default function ContactPage() {
           Get directions <ArrowOut />
         </Link>
         <Link className="tlink" href={whatsapp}>
-          WhatsApp the desk <Bloom />
+          Message the desk on WhatsApp
         </Link>
       </PageHeader>
 
@@ -51,7 +46,9 @@ export default function ContactPage() {
               <br />
               {address.city}, {address.country}
             </p>
-            <p className="data">Plus Code · {address.plusCode}</p>
+            <p className="meta">
+              Plus Code <span className="data">{address.plusCode}</span>
+            </p>
             <Link className="tlink" href={address.mapsUrl}>
               Open in Google Maps <ArrowOut />
             </Link>
@@ -62,11 +59,7 @@ export default function ContactPage() {
               Hours
             </h2>
             <OpenStatus />
-            <p className="info__hours">
-              {hours.weekdays}
-              <br />
-              {hours.weekends}
-            </p>
+            <Hours />
             <p className="meta">
               {hours.note} {hours.walkins}
             </p>
@@ -78,7 +71,7 @@ export default function ContactPage() {
             </h2>
             <div className="info__links">
               <Link href={whatsapp}>
-                <Chat className="icon mr-3" /> WhatsApp — the fastest way
+                <Chat className="icon mr-3" /> WhatsApp, the fastest way
               </Link>
               <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>
                 <Phone className="icon mr-3" />

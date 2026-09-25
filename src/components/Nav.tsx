@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import Bloom from "@/components/Bloom"
 import Link from "@/components/Link"
 import OpenStatus from "@/components/OpenStatus"
-import { Arrow, Close } from "@/components/icons"
+import { Close } from "@/components/icons"
 import { SITE_CONFIG } from "@/data/site"
 
 const LOGO = "/amari-horizontal.svg"
@@ -162,7 +161,6 @@ export default function Nav() {
                   onClick={() => setMenuOpen(false)}
                 >
                   {label}
-                  <Bloom />
                 </Link>
               </li>
             ))}
@@ -172,12 +170,12 @@ export default function Nav() {
             href="/book"
             onClick={() => setMenuOpen(false)}
           >
-            Book a session <Arrow />
+            Book a session
           </Link>
           <div className="menu__footer">
             <OpenStatus />
             <span>
-              {SITE_CONFIG.address.street} · {SITE_CONFIG.address.neighborhood},{" "}
+              {SITE_CONFIG.address.street}, {SITE_CONFIG.address.neighborhood},{" "}
               {SITE_CONFIG.address.city}
             </span>
             <span className="data">{SITE_CONFIG.contact.phone}</span>

@@ -1,7 +1,6 @@
 import CtaBand from "@/components/CtaBand"
 import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
-import { Arrow } from "@/components/icons"
 import { ARTICLES, isoDate } from "@/data/journal"
 import { pageMetadata } from "@/lib/metadata"
 
@@ -16,14 +15,8 @@ export default function JournalPage() {
   return (
     <main id="main-content">
       <PageHeader
-        surface="surface-dim"
-        label={`The journal · ${ARTICLES.length} pieces`}
-        title={
-          <>
-            Notes on <em>stopping.</em>
-          </>
-        }
-        lead="Short essays on rest, silence, and the small act of being unreachable for an hour. Read one in the lounge, or at home."
+        title="Notes on stopping."
+        lead={`${ARTICLES.length} short essays on rest, silence, and the small act of being unreachable for an hour. Read one in the lounge, or at home.`}
       />
 
       <section className="wrap sec--tight" aria-label="All pieces">
@@ -44,7 +37,6 @@ export default function JournalPage() {
                   <h2 className="h3">{a.title}</h2>
                   <p className={i === 0 ? "lead" : "small"}>{a.description}</p>
                 </div>
-                <Arrow />
               </Link>
             </li>
           ))}
@@ -52,12 +44,8 @@ export default function JournalPage() {
       </section>
 
       <CtaBand
-        label="Put the phone down"
-        title={
-          <>
-            Read less about it. <em>Try it.</em>
-          </>
-        }
+        name="Book a session"
+        title="Read less about it. Try it."
         body="An hour in a quiet room, with nobody asking anything of you."
       />
     </main>

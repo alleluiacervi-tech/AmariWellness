@@ -1,10 +1,8 @@
-import Bloom from "@/components/Bloom"
 import CtaBand from "@/components/CtaBand"
 import Faq from "@/components/Faq"
 import Figure from "@/components/Figure"
 import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
-import Reveal from "@/components/Reveal"
 import { Check } from "@/components/icons"
 import { HYGIENE_PROTOCOL, SHELF, SPACE_FAQS } from "@/data/site"
 import { IMAGES } from "@/data/images"
@@ -27,22 +25,15 @@ export default function SpacePage() {
   return (
     <main id="main-content">
       <PageHeader
-        label="The space · Kimihurura"
-        title={
-          <>
-            Four suites, one quiet room, <em>no music.</em>
-          </>
-        }
+        title="Four suites, one quiet room, no music."
         lead="One room is yours alone and locks from the inside. The other is shared, silent, and has no clock in it."
         media={IMAGES.timberRoom}
       />
 
-      {/* ── The reading room ── */}
       <section className="wrap sec split" aria-labelledby="lounge-title">
-        <Reveal className="stack items-start">
-          <p className="label">The reading room</p>
+        <div className="stack items-start">
           <h2 className="h2" id="lounge-title">
-            A second room, <em>for after.</em>
+            A second room, for after.
           </h2>
           <p className="body">
             Low light, deep chairs, and nobody waiting for your seat. The
@@ -58,7 +49,7 @@ export default function SpacePage() {
               </li>
             ))}
           </ul>
-        </Reveal>
+        </div>
         <Figure
           {...IMAGES.loungeChair}
           className="rounded ratio-4x5"
@@ -66,13 +57,11 @@ export default function SpacePage() {
         />
       </section>
 
-      {/* ── The shelf ── */}
       <section className="surface-stone" aria-labelledby="shelf-title">
         <div className="wrap sec split split--top">
           <div className="stack items-start">
-            <p className="label">The shelf · This month</p>
             <h2 className="h2" id="shelf-title">
-              Changed each month. <em>Nothing is for sale.</em>
+              This month&apos;s shelf.
             </h2>
             <p className="body">{SHELF.note}</p>
           </div>
@@ -87,40 +76,37 @@ export default function SpacePage() {
         </div>
       </section>
 
-      {/* ── Between every guest ── */}
       <section
         className="wrap sec protocol"
         id="between-guests"
         aria-labelledby="protocol-title"
       >
-        <Reveal className="stack items-start">
-          <p className="label">Hygiene &amp; turnover</p>
+        <div className="stack items-start">
           <h2 className="h2" id="protocol-title">
-            Nobody sits on the cover <em>you sat on.</em>
+            Nobody sits on the cover you sat on.
           </h2>
           <p className="body">
-            Specific numbers beat reassuring adjectives. This is what happens
-            in the suite after one guest leaves and before the next comes in.
+            This is what happens in the suite after one guest leaves and before
+            the next comes in.
           </p>
           <div className="protocol__figure">
             <strong>15 min</strong>
             <span className="meta">
-              of turnover, reserved in the schedule after every booking — never
-              squeezed in while you wait.
+              of turnover, reserved in the schedule after every booking and
+              never squeezed in while you wait.
             </span>
           </div>
-        </Reveal>
-        <Reveal as="ul" className="protocol__list" stagger>
+        </div>
+        <ul className="protocol__list">
           {HYGIENE_PROTOCOL.map((item) => (
             <li key={item.label}>
               <h3 className="h4">{item.label}</h3>
               <p className="small">{item.detail}</p>
             </li>
           ))}
-        </Reveal>
+        </ul>
       </section>
 
-      {/* ── Gallery ── */}
       <section className="wrap sec--tight" aria-label="More of the space">
         {/* Scrolls sideways on phones, so it takes focus for keyboard users. */}
         <div className="gallery" tabIndex={0} role="group" aria-label="Photographs of the space">
@@ -135,37 +121,21 @@ export default function SpacePage() {
         </div>
       </section>
 
-      <section className="surface-dim">
-        <div className="wrap sec">
-          <Faq
-            name="space-faq"
-            items={SPACE_FAQS}
-            label="The room, asked about"
-            title={
-              <>
-                Phones, laptops <em>and parking.</em>
-              </>
-            }
-          >
-            <Link className="tlink" href="/contact">
-              Something else? Ask the desk <Bloom />
-            </Link>
-          </Faq>
-        </div>
-      </section>
+      <div className="wrap sec">
+        <Faq name="space-faq" items={SPACE_FAQS} title="Phones, laptops and parking.">
+          <Link className="tlink" href="/contact">
+            Ask the desk something else
+          </Link>
+        </Faq>
+      </div>
 
       <CtaBand
-        surface="surface-paper"
-        label="Ready when you are"
-        title={
-          <>
-            Close the door <em>behind you.</em>
-          </>
-        }
-        body="Fifteen minutes, half an hour, or a full hour — with the lounge afterwards."
+        name="Book a session"
+        title="Close the door behind you."
+        body="Fifteen minutes, half an hour, or a full hour, with the lounge afterwards."
         secondary={
           <Link className="tlink" href="/sessions">
-            Compare sessions <Bloom />
+            Compare sessions
           </Link>
         }
       />

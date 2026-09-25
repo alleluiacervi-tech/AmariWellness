@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * "Open now · until 21:00", read live off the clock in Kigali.
+ * "Open now, until 21:00", read live off the clock in Kigali.
  * Renders an empty line on the server and fills in after mount, so the
  * visitor's clock — not the build machine's — decides what it says.
  */
@@ -39,8 +39,8 @@ function compute(): Status {
   if (now.minutes < today.open * 60)
     return { open: false, text: "Opens today at", time: pad(today.open) }
   if (now.minutes < today.close * 60)
-    return { open: true, text: "Open now · until", time: pad(today.close) }
-  return { open: false, text: "Closed · opens tomorrow at", time: pad(tomorrow.open) }
+    return { open: true, text: "Open now, until", time: pad(today.close) }
+  return { open: false, text: "Closed, opens tomorrow at", time: pad(tomorrow.open) }
 }
 
 export default function OpenStatus({ className = "" }: { className?: string }) {

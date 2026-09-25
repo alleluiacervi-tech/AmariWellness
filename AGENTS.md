@@ -16,6 +16,16 @@ node scripts/push.mjs "commit message"
 
 It writes a single commit to `alleluiacervi-tech/AmariWellness` through the GitHub Git Data API. The token is read from the macOS Keychain (service `amari-github-pat`), never from a file — never write a token into the repo. Once real git is available, use it instead and delete `scripts/push.mjs`.
 
+## Design direction
+
+The site follows Anthropic's **frontend-design** skill, vendored at `.claude/skills/frontend-design/` (Claude Code loads it automatically; read it before any visual work). Applied to this brief:
+
+- **Time is the product, so the gold dial is the one bold element.** The home hero is an instrument (`HeroTime`): pick 15, 30 or 60 minutes and the dial sweeps to it while name, price and the book button follow. Everywhere else the dial is a small quiet glyph beside a duration.
+- **Everything around it stays quiet.** Headlines are plain upright serif — never one word picked out in italic or colour. Sentence case everywhere; no all-caps eyebrows, and a label only when it tells the reader something the heading does not. No `→` or bloom appended to link and button text. No details strung together with middle dots — use commas, line breaks or a small table (`Hours`).
+- **Structure is information.** Comparisons are rows (`.rows` / `.row`), not grids of identical cards. Numbers and rules only where the content is a sequence (the first-visit timeline, booking steps).
+- **Stillness is the brand.** One page-load moment per page (`.enter`, `.enter-media`, and on home the dial's sweep). No scroll-in effects and no hover lifts; motion otherwise only answers the visitor (dial change, accordion, booking steps).
+- The home headline steps down line by line, the way the chair reclines. That is the type's one flourish.
+
 ## Project Structure
 
 This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
@@ -34,9 +44,9 @@ This is the canonical project structure. Start with task-relevant files below. O
 
 ### Components
 
-Client (`'use client'`): `Nav` (scroll state, accessible menu dialog), `Footer`, `Link` (next/link + smooth scroll-to-top), `Figure` (next/image + shimmer + fallback), `Reveal` (scroll entrance, progressive enhancement), `OpenStatus` (live open/closed in Kigali time), `BookingFlow`, `ContactForm`.
+Client (`'use client'`): `Nav` (scroll state, accessible menu dialog), `Footer`, `Link` (next/link + smooth scroll-to-top), `Figure` (next/image + shimmer + fallback), `HeroTime` (the home hero's time instrument), `OpenStatus` (live open/closed in Kigali time), `BookingFlow`, `ContactForm`.
 
-Server: `PageHeader` (how every inner page opens), `SectionHead`, `CtaBand` (how every inner page ends), `Faq` (native `<details>`), `Dial` (a duration as a gold arc against the hour), `PaymentMethods` / `PaymentMark`, `Bloom`, `icons`.
+Server: `PageHeader` (how every inner page opens), `SectionHead`, `CtaBand` (how every inner page ends), `Faq` (native `<details>`), `Dial` (a duration as a gold arc against the hour; `sweep` once per page), `Hours`, `PaymentMethods` / `PaymentMark`, `Bloom` (brand mark only — 404, image fallback, notices), `icons`.
 
 ## Dependencies
 
@@ -54,22 +64,22 @@ Fonts are loaded with `next/font/google` in `layout.tsx` as `--font-dm-sans` / `
 
 One rule, and it is worth keeping:
 
-- **Instrument Serif** — the room speaks. Headlines, page titles, session and pack names, quotes. Italic + `--s-em` for the second half of a headline.
+- **Instrument Serif** — the room speaks. Headlines, page titles, session and pack names, quotes. Upright; italic only for a whole line (a session's one-line intro), never for an accent word.
 - **DM Sans** — you speak. Body copy, UI, labels and eyebrows, navigation, buttons.
-- **DM Mono** — the machine speaks. Durations, prices, times, reference codes, Plus Codes. Nothing that isn't data — if it has a verb in it, it is not mono.
+- **DM Mono** — the machine speaks. Durations, prices, clock times, reference codes, Plus Codes — the numbers themselves. Dates, "a session", "Saves…" and every other word stay in DM Sans.
 
 One scale: `.display` (home hero only), `.h1` (page titles), `.h2` (section titles), `.h3` (card titles), `.h4` (list items, FAQ questions), `.lead`, `.body`, `.small`, `.meta`, `.label`. Don't set a heading's `font-size` locally.
 
 ### Surfaces
 
-Sections declare a ground — `.surface-paper` (default), `.surface-dim`, `.surface-mist`, `.surface-stone`, `.surface-deep` (the one dark block, closing the home page) — and every component reads the resulting `--s-*` tokens (`ground`, `raised`, `sunk`, `field`, `ink`, `body`, `meta`, `rule`, `rule-2`, `label`, `accent`, `em`, `focus`, `btn`, `btn-ink`, `btn-hover`). Buttons, fields, rules and focus rings come out right on any ground automatically. **Never hardcode a colour in a component**; if something looks wrong on a surface, fix that surface's tokens.
+Sections declare a ground — `.surface-paper` (default), `.surface-stone` (one band per page at most), `.surface-deep` (the one dark block, closing the home page); `.surface-dim` and `.surface-mist` exist for small panels. Separate sections with space, not alternating bands — and every component reads the resulting `--s-*` tokens (`ground`, `raised`, `sunk`, `field`, `ink`, `body`, `meta`, `rule`, `rule-2`, `label`, `accent`, `em`, `focus`, `btn`, `btn-ink`, `btn-hover`). Buttons, fields, rules and focus rings come out right on any ground automatically. **Never hardcode a colour in a component**; if something looks wrong on a surface, fix that surface's tokens.
 
 Gold means one thing: the machine — durations, prices, the dial, the timeline. Sage marks the human and organic. On light grounds the accent resolves to `--gold-text`, which clears AA; raw `--gold` only passes on dark.
 
 ### Shape and motion
 
 - One radius pair (`--r-sm` 4px for buttons and slots, `--r-md` 8px for cards) and one signature shape: **the arch** (`.arch`, large top-left radius), used on the hero and page-header photographs only.
-- One entrance per page (`.enter` on the header copy, `.enter-media` on its photo), `Reveal` for sections below the fold, hover micro-interactions on cards, buttons and links. Nothing loops except the image shimmer while loading. Everything respects `prefers-reduced-motion`.
+- One entrance per page (`.enter` on the header copy, `.enter-media` on its photo; on home, the dial's sweep). Hover changes colour, never position. Nothing loops except the image shimmer while loading. Everything respects `prefers-reduced-motion`.
 
 ## Routing & Server/Client boundary
 

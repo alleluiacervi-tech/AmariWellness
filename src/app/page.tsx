@@ -1,14 +1,12 @@
 import type { Metadata } from "next"
-import Bloom from "@/components/Bloom"
-import Dial from "@/components/Dial"
 import Faq from "@/components/Faq"
 import Figure from "@/components/Figure"
+import HeroTime from "@/components/HeroTime"
+import Hours from "@/components/Hours"
 import Link from "@/components/Link"
 import OpenStatus from "@/components/OpenStatus"
-import Reveal from "@/components/Reveal"
 import SectionHead from "@/components/SectionHead"
-import { Arrow, Cup, Door, Sliders } from "@/components/icons"
-import { FEATURED_SESSION_ID, SESSIONS, formatRWF } from "@/data/sessions"
+import { formatRWF } from "@/data/sessions"
 import { PACKS } from "@/data/packs"
 import { SITE_CONFIG, VISIT_STEPS } from "@/data/site"
 import { IMAGES } from "@/data/images"
@@ -27,12 +25,6 @@ export const metadata: Metadata = {
     url: "/",
   },
 }
-
-const ASSURANCES = [
-  { Icon: Door, title: "Your own private suite", body: "It locks from the inside. Nobody comes in." },
-  { Icon: Sliders, title: "Comfort on your terms", body: "Change the intensity, or stop, at any moment." },
-  { Icon: Cup, title: "Stay a little longer", body: "The lounge is yours afterwards, no time limit." },
-]
 
 const QUESTIONS = [
   {
@@ -53,46 +45,28 @@ const QUESTIONS = [
   },
 ]
 
-const featured = SESSIONS.find((s) => s.id === FEATURED_SESSION_ID) ?? SESSIONS[1]
-const lowestPackRate = PACKS.filter((p) => p.sessionMinutes === 30).reduce(
-  (low, p) => (p.perSessionNumber < low.perSessionNumber ? p : low),
+const halfHourPackRate = Math.min(
+  ...PACKS.filter((p) => p.sessionMinutes === 30).map((p) => p.perSessionNumber),
 )
 
 export default function HomePage() {
-  const { hours, address } = SITE_CONFIG
+  const { address } = SITE_CONFIG
 
   return (
     <main id="main-content">
-      {/* ── Hero ── */}
       <section className="wrap hero" aria-labelledby="hero-title">
         <div className="hero__copy enter">
-          <p className="label">Private massage suites · {address.city}</p>
           <h1 className="display hero__title" id="hero-title">
-            A chair.
-            <br />
-            A quiet room.
-            <br />
-            <em>Time to think.</em>
+            <span>A chair.</span>
+            <span>A quiet room.</span>
+            <span>Time to think.</span>
           </h1>
           <p className="lead hero__lead">
-            A private room, a machine that does the work, and nobody to talk
-            to. You close the door yourself.
+            A private suite that locks from the inside, a chair that does the
+            work, and the lounge afterwards for as long as you like. In{" "}
+            {address.neighborhood}, {address.city}.
           </p>
-          <div className="hero__actions">
-            <Link className="btn" href="/book">
-              Book a session <Arrow />
-            </Link>
-            <Link className="tlink" href="#the-space">
-              Explore the space <Bloom />
-            </Link>
-          </div>
-          <div className="hero__note">
-            <p className="hero__facts">
-              <span>15 · 30 · 60 min</span>
-              <span>From {SESSIONS[0].price}</span>
-            </p>
-            <OpenStatus />
-          </div>
+          <HeroTime />
         </div>
 
         <div className="hero__visual enter-media">
@@ -100,102 +74,11 @@ export default function HomePage() {
             {...IMAGES.suiteMood}
             eager
             className="arch"
-            sizes="(max-width: 720px) 100vw, (max-width: 1320px) 48vw, 620px"
+            sizes="(max-width: 720px) 100vw, (max-width: 1320px) 46vw, 600px"
           />
-          <Link className="hero__card" href={`/book?session=${featured.id}`}>
-            <Dial minutes={featured.durationMinutes} />
-            <span className="hero__card-copy">
-              <span>Where most people start</span>
-              <strong>{featured.name}</strong>
-              <span className="data">{featured.price}</span>
-            </span>
-          </Link>
         </div>
       </section>
 
-      <div className="wrap">
-        <ul className="assurances" aria-label="What every session includes">
-          {ASSURANCES.map(({ Icon, title, body }) => (
-            <li className="assurance" key={title}>
-              <Icon />
-              <p className="meta">
-                <strong>{title}</strong>
-                {body}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* ── Sessions ── */}
-      <section className="sec surface-mist" id="sessions" aria-labelledby="sessions-title">
-        <div className="wrap">
-          <SectionHead
-            id="sessions-title"
-            label="Make room for yourself"
-            title={
-              <>
-                Fifteen minutes, <em>or a full hour.</em>
-              </>
-            }
-            action={
-              <Link className="tlink" href="/sessions">
-                Compare sessions <Bloom />
-              </Link>
-            }
-          />
-          <Reveal className="session-grid" stagger>
-            {SESSIONS.map((s) => {
-              const isFeatured = s.id === featured.id
-              return (
-                <article
-                  key={s.id}
-                  className={`session-card ${isFeatured ? "session-card--featured" : ""}`}
-                  aria-labelledby={`card-${s.id}`}
-                >
-                  <div className="session-card__head">
-                    <Dial minutes={s.durationMinutes} />
-                    {isFeatured ? (
-                      <span className="tag">A good place to start</span>
-                    ) : (
-                      <span className="label">{s.label}</span>
-                    )}
-                  </div>
-                  <h3 className="h3" id={`card-${s.id}`}>
-                    {s.name}
-                  </h3>
-                  <p className="small">{s.summary}</p>
-                  <div className="session-card__foot">
-                    <p className="price">
-                      {s.price}
-                      <small>
-                        per person · {s.offPeakPrice} in quiet hours
-                      </small>
-                    </p>
-                    <Link
-                      className={isFeatured ? "btn btn--block" : "btn btn--outline btn--block"}
-                      href={`/book?session=${s.id}`}
-                    >
-                      Book {s.durationMinutes} minutes <Arrow />
-                    </Link>
-                  </div>
-                </article>
-              )
-            })}
-          </Reveal>
-          <p className="session-note">
-            <span>
-              Coming back? Packs bring a half hour down to{" "}
-              <span className="data">{formatRWF(lowestPackRate.perSessionNumber)}</span>.
-            </span>
-            <Link className="tlink" href="/packs">
-              See session packs <Bloom />
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      {/* ── The space ── */}
       <section className="wrap sec split" id="the-space" aria-labelledby="space-title">
         <div>
           <Figure
@@ -203,40 +86,32 @@ export default function HomePage() {
             className="rounded ratio-7x8"
             sizes="(max-width: 860px) 100vw, 50vw"
           />
-          <span className="caption">The lounge — for afterwards, for as long as you like.</span>
+          <span className="caption">The lounge, for afterwards.</span>
         </div>
-        <Reveal className="stack items-start">
-          <p className="label">The Amari feeling</p>
+        <div className="stack items-start">
           <h2 className="h2" id="space-title">
-            Somewhere to sit <em>afterwards.</em>
+            Somewhere to sit afterwards.
           </h2>
           <p className="lead">Some time should belong to you alone.</p>
           <p className="body">
-            A private suite, a comfortable chair, and a programme you control.
-            Afterwards, ease back into your day with a book from the shelf, a
-            cup of tea, or a few more minutes to yourself in the lounge. There
-            is no clock on the wall.
+            When the programme ends, the reading room is yours. A book from
+            the shelf, a cup of tea, a few more minutes with your eyes shut.
+            There is no clock on the wall and nobody waiting for your seat.
           </p>
           <Link className="tlink" href="/space">
-            Get to know the space <Bloom />
+            See the suites and the lounge
           </Link>
-        </Reveal>
+        </div>
       </section>
 
-      {/* ── First visit ── */}
       <section className="surface-stone sec" id="first-visit" aria-labelledby="visit-title">
         <div className="wrap">
           <SectionHead
             id="visit-title"
-            label="Your first visit"
-            title={
-              <>
-                What actually <em>happens.</em>
-              </>
-            }
-            intro="Read off the clock, from the moment you walk in. No forms at the door, no small talk, nobody in the room."
+            title="What happens on your first visit."
+            intro="Timed for a half-hour session, from the moment the door closes. No forms at the door, no small talk, nobody in the room."
           />
-          <Reveal as="ol" className="timeline" stagger>
+          <ol className="timeline">
             {VISIT_STEPS.map((step) => (
               <li className="timeline__step" key={step.title}>
                 <span className="timeline__time">{step.time}</span>
@@ -244,59 +119,43 @@ export default function HomePage() {
                 <p className="small">{step.body}</p>
               </li>
             ))}
-          </Reveal>
+          </ol>
         </div>
       </section>
 
-      {/* ── Questions ── */}
       <div className="wrap sec">
-        <Faq
-          name="home-faq"
-          items={QUESTIONS}
-          label="A few things to know"
-          title={
-            <>
-              Before your <em>first session.</em>
-            </>
-          }
-        >
+        <Faq name="home-faq" items={QUESTIONS} title="Before your first session.">
           <p className="small">
-            Anything else — health questions included — the desk answers on
+            Anything else, health questions included, the desk answers on
             WhatsApp within the hour.
           </p>
           <Link className="tlink" href="/contact">
-            Ask us a question <Bloom />
+            Ask a question
           </Link>
         </Faq>
       </div>
 
-      {/* ── Close ── */}
       <section className="surface-deep" aria-labelledby="closing-title">
         <div className="wrap closing__inner">
-          <Reveal className="closing__copy">
-            <p className="label">
-              {address.neighborhood} · {address.city}
-            </p>
+          <div className="closing__copy">
             <h2 className="h1" id="closing-title">
-              Your next quiet moment <em>starts here.</em>
+              Your next quiet hour starts here.
             </h2>
             <p className="lead">
               Book online in under a minute, or walk in when a suite is free.
+              Coming often? Packs bring a half hour down to{" "}
+              <span className="data">{formatRWF(halfHourPackRate)}</span>.
             </p>
-          </Reveal>
+          </div>
           <div className="closing__aside">
             <OpenStatus />
-            <p className="closing__hours">
-              {hours.weekdays}
-              <br />
-              {hours.weekends}
-            </p>
+            <Hours />
             <div className="cluster">
               <Link className="btn" href="/book">
-                Book a session <Arrow />
+                Book a session
               </Link>
               <Link className="tlink" href="/contact">
-                Find us <Bloom />
+                Get directions
               </Link>
             </div>
           </div>
