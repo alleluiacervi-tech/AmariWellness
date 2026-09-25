@@ -9,6 +9,8 @@ import { can, ROLE_LABELS } from "@/server/auth/roles"
 const SECTIONS = [
   { href: "/staff/sessions", label: "Sessions & pricing", capability: "prices.edit" as const },
   { href: "/staff/location", label: "Location & hours", capability: "hours.edit" as const },
+  { href: "/staff/suites", label: "Suites & maintenance", capability: "suites.maintenance" as const },
+  { href: "/staff/content", label: "Website text & FAQs", capability: "content.edit" as const },
 ]
 
 export const metadata = {
