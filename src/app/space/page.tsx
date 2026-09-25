@@ -94,7 +94,7 @@ export default function SpacePage() {
         aria-labelledby="protocol-title"
       >
         <Reveal className="stack items-start">
-          <p className="label">Between every guest</p>
+          <p className="label">Hygiene &amp; turnover</p>
           <h2 className="h2" id="protocol-title">
             Nobody sits on the cover <em>you sat on.</em>
           </h2>
@@ -122,7 +122,8 @@ export default function SpacePage() {
 
       {/* ── Gallery ── */}
       <section className="wrap sec--tight" aria-label="More of the space">
-        <div className="gallery">
+        {/* Scrolls sideways on phones, so it takes focus for keyboard users. */}
+        <div className="gallery" tabIndex={0} role="group" aria-label="Photographs of the space">
           {[IMAGES.quietRoom, IMAGES.windowSeat, IMAGES.shelves].map((img) => (
             <Figure
               key={img.src}

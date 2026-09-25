@@ -49,24 +49,26 @@ export default function Footer() {
   if (pathname.startsWith("/book")) {
     return (
       <footer className="footer surface-paper">
-        <div className="wrap footer__base">
-          <span>
-            &copy; {year} {SITE_CONFIG.name}, Kigali
-          </span>
-          <span>
-            Questions?{" "}
-            <a
-              href={`https://wa.me/${contact.whatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              WhatsApp the desk
-            </a>{" "}
-            or call{" "}
-            <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>
-              {contact.phone}
-            </a>
-          </span>
+        <div className="wrap">
+          <div className="footer__base">
+            <span>
+              &copy; {year} {SITE_CONFIG.name}, Kigali
+            </span>
+            <span>
+              Questions?{" "}
+              <a
+                href={`https://wa.me/${contact.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp the desk
+              </a>{" "}
+              or call{" "}
+              <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>
+                {contact.phone}
+              </a>
+            </span>
+          </div>
         </div>
       </footer>
     )

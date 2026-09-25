@@ -29,7 +29,7 @@ export default function ContactPage() {
             Two minutes from <em>the roundabout.</em>
           </>
         }
-        lead={`${address.landmark}, on ${address.street}. ${address.parking}.`}
+        lead={`${address.street}, just off the ${address.neighborhood} roundabout. ${address.parking}, and the door is right off the road.`}
         media={IMAGES.architecture}
       >
         <Link className="btn" href={address.mapsUrl}>
@@ -78,13 +78,15 @@ export default function ContactPage() {
             </h2>
             <div className="info__links">
               <Link href={whatsapp}>
-                <Chat className="icon mr-3" /> WhatsApp · fastest
+                <Chat className="icon mr-3" /> WhatsApp — the fastest way
               </Link>
               <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>
-                <Phone className="icon mr-3" /> {contact.phone}
+                <Phone className="icon mr-3" />
+                <span className="font-mono">{contact.phone}</span>
               </a>
               <a href={`mailto:${contact.email}`}>
-                <Mail className="icon mr-3" /> {contact.email}
+                <Mail className="icon mr-3" />
+                <span className="font-mono">{contact.email}</span>
               </a>
             </div>
             <p className="meta">{contact.responseTime}</p>
