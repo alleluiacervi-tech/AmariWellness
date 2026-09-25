@@ -180,33 +180,53 @@ Capacity is **4 suites × about 11 hours ≈ 44 suite-hours a day**. Every featu
 
 ### Phase 0: Business decisions (before any backend code). **Waiting on owner**
 
-- [ ] Choose and contract a payment provider (MoMo, Airtel Money, cards); get sandbox keys
+The decision pack is prepared at [`docs/phase-0-decisions.md`](docs/phase-0-decisions.md):
+a payment-provider comparison with sources, a draft cancellation/no-show
+policy, a draft privacy notice, and the full go-live configuration checklist.
+None of the choices below are made yet — the pack exists so they can be made
+quickly. **Phase 1 does not wait on this phase being ticked off**: it is
+built against a sandbox payment adapter and placeholder content so it can be
+built and tested now, and switched to real providers/content as each item
+below is decided.
+
+- [ ] Choose and contract a payment provider (MoMo, Airtel Money, cards); get sandbox keys — comparison ready, see decision pack §1
 - [ ] Confirm VAT/EBM obligations with an accountant; decide VAT timing for packs and vouchers
-- [ ] Data-protection registration, privacy notice text, marketing-consent wording
+- [ ] Data-protection registration, privacy notice text, marketing-consent wording — draft ready, see decision pack §3
 - [ ] Confirm real brand name, domain, address and Plus Code, phone and WhatsApp number, Instagram handle, email
-- [ ] Confirm final prices (VAT-inclusive), quiet-hours window, cancellation and no-show policy, pack terms
+- [ ] Confirm final prices (VAT-inclusive), quiet-hours window, cancellation and no-show policy, pack terms — draft policy ready, see decision pack §2
 - [ ] Commission real photography (suites, chair, lounge, lockers); replace the Pinterest hot-links
-- [ ] WhatsApp Business account and message templates approved by Meta
-- [ ] Pick hosting and database providers; create the accounts
+- [ ] WhatsApp Business account and message templates approved by Meta — start early, approval has lead time
+- [ ] Pick hosting and database providers; create the accounts — recommendation: Vercel + managed Postgres (Neon), see §4 Architecture
 
-### Phase 1: Launchable minimum. **Not started**
+### Phase 1: Launchable minimum. **In progress**
 
-- [ ] Database, data model, migrations, seed data, daily backups
-- [ ] Staff login with two-step verification; roles (Owner, Manager, Front desk, Finance); activity log
-- [ ] Admin editing: session types and prices (price history), hours, holidays, suites, maintenance blocks, address, contact and social links (WhatsApp and Instagram in the footer), website text and photos, FAQs
-- [ ] Website reads all content and prices from the database instead of `src/data/*.ts`
-- [ ] Live availability engine: payment holds, 15-minute turnover, database-level no-double-booking rule
-- [ ] Client flow: phone plus one-time code, health acknowledgement, pay by MoMo, Airtel or card, provider-confirmed booking
-- [ ] Confirmation email and WhatsApp with signed QR code; 24-hour and 2-hour reminders
-- [ ] Staff check-in scanner and suite status board
-- [ ] Client area: bookings, QR codes, receipts, cancel or reschedule within policy
-- [ ] Contact form and messages inbox (status, assignee, reply)
-- [ ] Add-only ledger; refunds and discounts as logged actions with reasons
-- [ ] Reports: daily and monthly income by method and session type, bookings, clients, CSV export
-- [ ] EBM receipt number recorded per sale (receipts issued from RRA software at the desk)
-- [ ] Cancellation and no-show rules enforced; hold expiry and reminder jobs
-- [ ] Privacy notice page; marketing consent; client data export and deletion
-- [ ] Tests for booking, availability, payment and ledger rules; error monitoring; uptime alerts
+Sub-phases below match the P1.x tasks worked in order; tick a line only once it's built **and** verified (tests passing against a real Postgres, not just written).
+
+**P1.1 — Database foundation. Complete.**
+- [x] Full schema: locations, suites, session types + price history, clients (phone-identified, passwordless, walk-ins allowed with no phone), staff + roles, bookings, payments, the append-only ledger, packs, vouchers, companies, promo codes, messages, activity log, editable content/FAQs/social links, EBM receipt reference — see `docs/database.md`
+- [x] Database-level no-double-booking guarantee (a Postgres exclusion constraint, not application logic) — tested
+- [x] The ledger and activity log are append-only at the database level (a trigger rejects UPDATE/DELETE for any role) — tested
+- [x] Price history: a booking keeps the price it was made at; changing a price never rewrites the past
+- [x] Migrations (generated + hand-written), a seed script that loads today's `src/data/*.ts` content into real rows, and a test database with 12 passing constraint tests
+- [ ] Daily backups — a hosting/provider setting for Phase 0, not code; revisit once a managed Postgres provider is chosen
+
+  > **Note for future sessions:** this cloud sandbox's own Postgres (used to build and test the above) does not persist between sessions — only what's committed to git does (the schema, migrations, and seed script). A fresh session picks up exactly where P1.1 left off by running `pnpm db:migrate && pnpm db:seed` against a database it creates itself (see `docs/database.md`), not by expecting yesterday's local data to still be there. A real, persistent database is a Phase 0 hosting decision (managed Postgres — Neon or similar).
+
+- [ ] **P1.2** — Staff login with two-step verification; roles (Owner, Manager, Front desk, Finance); activity log wired to real actions
+- [ ] **P1.3** — Admin editing: session types and prices (price history), hours, holidays, suites, maintenance blocks, address, contact and social links (WhatsApp and Instagram in the footer), website text and photos, FAQs
+- [ ] **P1.3** — Website reads all content and prices from the database instead of `src/data/*.ts`
+- [ ] **P1.4** — Live availability engine: payment holds, 15-minute turnover (database-level no-double-booking rule already built in P1.1)
+- [ ] **P1.4** — Client flow: phone plus one-time code, health acknowledgement, pay by MoMo, Airtel or card, provider-confirmed booking
+- [ ] **P1.4** — Add-only ledger wired to real payments; refunds and discounts as logged actions with reasons (the database rules were built in P1.1; this is the application code that uses them)
+- [ ] **P1.5** — Confirmation email and WhatsApp with signed QR code; 24-hour and 2-hour reminders
+- [ ] **P1.5** — Staff check-in scanner and suite status board
+- [ ] **P1.5** — Client area: bookings, QR codes, receipts, cancel or reschedule within policy
+- [ ] **P1.6** — Contact form and messages inbox (status, assignee, reply)
+- [ ] **P1.6** — Reports: daily and monthly income by method and session type, bookings, clients, CSV export
+- [ ] **P1.6** — EBM receipt number recorded per sale (receipts issued from RRA software at the desk)
+- [ ] **P1.4/P1.5** — Cancellation and no-show rules enforced; hold expiry and reminder jobs
+- [ ] **P1.6** — Privacy notice page; marketing consent; client data export and deletion
+- [ ] **P1.6** — Tests for booking, availability, payment and ledger rules (constraint-level tests already passing from P1.1); error monitoring; uptime alerts
 
 ### Phase 2: Revenue growth. **Not started**
 
@@ -246,3 +266,5 @@ Capacity is **4 suites × about 11 hours ≈ 44 suite-hours a day**. Every featu
 | 2026-09-25 | A | Design system, all public pages, platform metadata, accessibility checks | `d1f44ff`, `a4e1cb1` |
 | 2026-09-25 | A | frontend-design skill installed and applied; Phase A marked complete | `546e19b` |
 | 2026-09-25 | — | This plan saved to `CLAUDE.md` | (this commit) |
+| 2026-09-25 | 0 | Owner decision pack: payment provider comparison, draft cancellation and privacy policies, go-live checklist | see `docs/phase-0-decisions.md` |
+| 2026-09-25 | P1.1 | Full schema (30 tables), the no-double-booking and append-only-ledger database guarantees, migrations, seed script, 12 passing tests against a real Postgres | (this commit) |

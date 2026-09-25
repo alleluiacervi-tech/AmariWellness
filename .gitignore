@@ -5,6 +5,7 @@ build/
 .DS_Store
 .cache/
 .env*
+!.env.example
 .vite/
 vite.config.*.timestamp-*
 *.tsbuildinfo
