@@ -7,10 +7,12 @@ import {
   faqs,
   holidays,
   locations,
+  maintenanceBlocks,
   packProducts,
   sessionTypePrices,
   sessionTypes,
   socialLinks,
+  suites,
 } from "./schema"
 
 /**
@@ -278,4 +280,68 @@ export const getVisitSteps = cache(async (): Promise<VisitStep[]> => {
 export const getShelf = cache(async (): Promise<Shelf> => {
   const blocks = await getContentBlocks()
   return (blocks["shelf"] as Shelf) ?? { note: "", titles: [] }
+})
+
+/* ──────────────────── Admin-only reads (Phase 1.3 part 2b) ────────────────────
+ * The functions above shape data for the public site. These are for
+ * `/staff/*` pages instead: they return the full row (id, inactive rows
+ * included where relevant) so a form can edit or delete by id, which the
+ * public-facing shapes above deliberately don't expose.
+ */
+
+export type SuiteRow = {
+  id: string
+  name: string
+  status: "ready" | "occupied" | "cleaning" | "maintenance"
+  note: string | null
+  sortOrder: number
+}
+
+export const getSuitesForAdmin = cache(async (): Promise<SuiteRow[]> => {
+  const location = await getLocation()
+  const rows = await db
+    .select({ id: suites.id, name: suites.name, status: suites.status, note: suites.note, sortOrder: suites.sortOrder })
+    .from(suites)
+    .where(and(eq(suites.locationId, location.id), eq(suites.active, true)))
+    .orderBy(asc(suites.sortOrder))
+  return rows
+})
+
+export type MaintenanceBlockRow = {
+  id: string
+  suiteId: string
+  suiteName: string
+  startAt: Date
+  endAt: Date
+  reason: string
+}
+
+export const getMaintenanceBlocksForAdmin = cache(async (): Promise<MaintenanceBlockRow[]> => {
+  const location = await getLocation()
+  const rows = await db
+    .select({
+      id: maintenanceBlocks.id,
+      suiteId: maintenanceBlocks.suiteId,
+      suiteName: suites.name,
+      startAt: maintenanceBlocks.startAt,
+      endAt: maintenanceBlocks.endAt,
+      reason: maintenanceBlocks.reason,
+    })
+    .from(maintenanceBlocks)
+    .innerJoin(suites, eq(suites.id, maintenanceBlocks.suiteId))
+    .where(eq(suites.locationId, location.id))
+    .orderBy(asc(maintenanceBlocks.startAt))
+  return rows
+})
+
+export type FaqRow = { id: string; group: string; question: string; answer: string; sortOrder: number }
+
+export const getFaqsForAdmin = cache(async (): Promise<FaqRow[]> => {
+  const location = await getLocation()
+  const rows = await db
+    .select({ id: faqs.id, group: faqs.group, question: faqs.question, answer: faqs.answer, sortOrder: faqs.sortOrder })
+    .from(faqs)
+    .where(and(eq(faqs.locationId, location.id), eq(faqs.active, true)))
+    .orderBy(asc(faqs.group), asc(faqs.sortOrder))
+  return rows
 })
