@@ -13,11 +13,11 @@ export default function Reveal({
 }: {
   children: ReactNode
   className?: string
-  as?: "div" | "section"
+  as?: "div" | "section" | "ol" | "ul"
   style?: CSSProperties
   stagger?: boolean
 }) {
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const el = ref.current

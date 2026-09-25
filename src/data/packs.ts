@@ -10,6 +10,9 @@ export interface SessionPack {
   price: string
   priceNumber: number
   perSession: string
+  perSessionNumber: number
+  /** Length of each session in the pack. */
+  sessionMinutes: number
   sessions: string
   validity: string
   saving: string
@@ -26,6 +29,8 @@ export const PACKS: SessionPack[] = [
     price: formatRWF(67000),
     priceNumber: 67000,
     perSession: `${formatRWF(13400)} a session`,
+    perSessionNumber: 13400,
+    sessionMinutes: 30,
     sessions: '5 × 30-minute sessions',
     validity: 'Valid for 2 months',
     saving: `Saves ${formatRWF(8000)}`,
@@ -46,6 +51,8 @@ export const PACKS: SessionPack[] = [
     price: formatRWF(127000),
     priceNumber: 127000,
     perSession: `${formatRWF(12700)} a session`,
+    perSessionNumber: 12700,
+    sessionMinutes: 30,
     sessions: '10 × 30-minute sessions',
     validity: 'Valid for 3 months',
     saving: `Saves ${formatRWF(23000)}`,
@@ -67,6 +74,8 @@ export const PACKS: SessionPack[] = [
     price: formatRWF(212000),
     priceNumber: 212000,
     perSession: `${formatRWF(21200)} a session`,
+    perSessionNumber: 21200,
+    sessionMinutes: 60,
     sessions: '10 × 60-minute sessions',
     validity: 'Valid for 3 months',
     saving: `Saves ${formatRWF(38000)}`,
@@ -88,7 +97,8 @@ export const GIFT_VOUCHER = {
   name: 'Gift voucher',
   description:
     'Bought by value rather than session count, delivered as a code, and spendable on any programme. Valid for twelve months. A reasonable gift for someone who will not book this for themselves.',
-  amounts: [formatRWF(15000), formatRWF(25000), formatRWF(50000), formatRWF(100000)],
+  /** Suggested values, in RWF. Any amount is possible — ask the desk. */
+  values: [15000, 25000, 50000, 100000],
   cta: 'Buy a voucher',
 }
 

@@ -7,6 +7,7 @@
 
 export const SITE_CONFIG = {
   name: 'Amari', // TODO: confirm Rwandan brand name
+  url: 'https://amari.rw', // TODO: confirm domain — used for canonical, sitemap and share cards
   tagline: 'A chair. A quiet room. Time to think.',
   description:
     'Private automated massage suites in Kigali. You are not touched by anyone. Book a chair, close the door, and let the machine work.',
@@ -20,6 +21,8 @@ export const SITE_CONFIG = {
     landmark: 'Two minutes from the Kimihurura roundabout', // TODO: confirm nearest landmark
     parking: 'Free on-site parking for eight cars',
     full: 'KG 7 Ave, Kimihurura, Kigali, Rwanda',
+    /** Opens the address in Google Maps. Swap the query for the Plus Code once confirmed. */
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=KG%207%20Ave%2C%20Kimihurura%2C%20Kigali%2C%20Rwanda',
   },
 
   contact: {
@@ -34,6 +37,11 @@ export const SITE_CONFIG = {
     weekends: 'Saturday – Sunday · 09:00 – 20:00',
     note: 'Last session starts one hour before closing.',
     walkins: 'Walk-ins are welcome when a suite is free. Booking guarantees one.',
+    /** The same hours as numbers, in Kigali time, for the live open/closed status. */
+    schedule: {
+      weekday: { open: 10, close: 21 },
+      weekend: { open: 9, close: 20 },
+    },
   },
 
   /** Shown at checkout and in the footer. Design-only for now — no gateway is wired up. */
@@ -63,37 +71,28 @@ export const HYGIENE_PROTOCOL = [
   },
 ]
 
-/** What actually happens on a first visit. Plain language, no poetry. */
+/** What actually happens on a first visit, read off the clock. Times are
+    relative to the moment your session starts. Plain language, no poetry. */
 export const VISIT_STEPS = [
   {
-    step: '01',
+    time: '−05:00',
     title: 'You arrive',
-    body: 'Come five minutes early on your first visit. Reception checks you in and shows you the suite. No forms to fill in at the door — you did that when you booked.',
+    body: 'Reception checks you in and shows you the suite. Lock your phone away or keep it — we hand you a key either way and never ask which.',
   },
   {
-    step: '02',
-    title: 'You decide about your phone',
-    body: 'Take it in with you, or lock it away. We hand you a locker key either way and never ask which you chose. There is no right answer.',
-  },
-  {
-    step: '03',
+    time: '00:00',
     title: 'You close the door',
-    body: 'The suite is yours alone. It locks from the inside. Nobody comes in during your session, and there is no attendant in the room at any point.',
+    body: 'The suite is yours alone and locks from the inside. Nobody comes in during your session, and there is no attendant in the room.',
   },
   {
-    step: '04',
-    title: 'You start the chair',
-    body: 'One panel, one start button. The chair measures your height and shoulder position on its own, then begins. You can change the intensity or stop it entirely at any moment.',
+    time: '00:01',
+    title: 'The chair does the work',
+    body: 'One panel, one start button. It measures your shoulders, reclines, and begins. Turn the intensity up or down, or stop it, at any moment.',
   },
   {
-    step: '05',
-    title: 'The machine works',
-    body: 'Rollers move along your spine, the chair tilts back to zero gravity, air cushions compress your calves and arms. You do nothing at all. Most people close their eyes.',
-  },
-  {
-    step: '06',
+    time: '00:30',
     title: 'You sit in the lounge',
-    body: 'When the programme ends, the reading room is yours for as long as you want it. Tea is poured. There is no clock and nobody waiting for your seat.',
+    body: 'When the programme ends, the reading room is yours for as long as you want it. Tea is poured. There is no clock on the wall.',
   },
 ]
 

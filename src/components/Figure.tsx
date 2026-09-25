@@ -2,20 +2,23 @@
 
 /**
  * next/image with a shimmer while loading and a branded card if the
- * remote asset fails. Colours come from the stylesheet, not from
- * hardcoded hex — so it stays correct if the palette moves.
+ * remote asset fails. Shape (arch, ratio) comes in through className;
+ * colours come from the surface tokens, never from here.
  */
 
 import { useState } from "react"
 import Image from "next/image"
+import Bloom from "@/components/Bloom"
 
 export interface FigureProps {
   src: string
   alt: string
+  /** Above the fold: preload and skip the shimmer. */
   eager?: boolean
   className?: string
   sizes?: string
 }
+
 export function Figure({
   src,
   alt,
@@ -26,39 +29,30 @@ export function Figure({
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  if (failed) {
-    return (
-      <div
-        className={`figure__fallback ${className}`}
-        role="img"
-        aria-label={alt}
-      >
-        <span className="figure__fallback-mark">Amari</span>
-        <span className="figure__fallback-alt">{alt}</span>
-      </div>
-    )
-  }
-
   return (
     <div className={`figure ${className}`}>
-      {!loaded && !eager && (
-        <div className="figure__shimmer" aria-hidden="true" />
+      {failed ? (
+        <div className="figure__fallback" role="img" aria-label={alt}>
+          <Bloom />
+          <span aria-hidden="true">{alt}</span>
+        </div>
+      ) : (
+        <>
+          {!loaded && !eager && (
+            <div className="figure__shimmer" aria-hidden="true" />
+          )}
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes={sizes}
+            preload={eager}
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+            style={{ objectFit: "cover", opacity: loaded || eager ? 1 : 0 }}
+          />
+        </>
       )}
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        priority={eager}
-        loading={eager ? undefined : "lazy"}
-        onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
-        style={{
-          objectFit: "cover",
-          opacity: loaded || eager ? 1 : 0,
-          transition: "transform 900ms var(--ease), opacity 600ms var(--ease)",
-        }}
-      />
     </div>
   )
 }

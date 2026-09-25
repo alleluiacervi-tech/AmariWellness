@@ -8,6 +8,14 @@ export interface ArticleItem {
   paragraphs: string[]
 }
 
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+/** "3 September 2026" → "2026-09-03", without a timezone to trip over. */
+export function isoDate(date: string): string {
+  const [day, month, year] = date.split(' ')
+  return `${year}-${String(MONTHS.indexOf(month) + 1).padStart(2, '0')}-${day.padStart(2, '0')}`
+}
+
 export const ARTICLES: ArticleItem[] = [
   {
     slug: 'on-doing-nothing',
@@ -15,7 +23,7 @@ export const ARTICLES: ArticleItem[] = [
     date: '3 September 2026',
     readTime: '4 min read',
     description: 'A defence of the empty afternoon and the people who have stopped filling it.',
-    lead: 'There is a particular guilt that arrives at around 3pm on a free Saturday. You have done nothing, and yet the mind whispers that you should have.',
+    lead: 'An hour that produces nothing is not a wasted hour. It may be the most useful one in your week.',
     paragraphs: [
       'There is a particular guilt that arrives at around 3pm on a free Saturday. You\'ve done nothing. The dishes are still there. The run didn\'t happen. You sat in a chair for two hours and read, or stared, or simply existed — and now the afternoon is sliding away and you have nothing to show for it. This guilt is so familiar we rarely question it. But we should.',
       'Doing nothing is not idleness. Idleness is the avoidance of something. Doing nothing is a practice — deliberate, chosen, and increasingly rare. It is the state in which the body recovers, the nervous system downregulates, and the mind begins to process the things it has been too busy to touch. When we deprive ourselves of it, we do not become more productive. We become more brittle.',
