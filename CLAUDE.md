@@ -196,7 +196,7 @@ below is decided.
 - [ ] Confirm final prices (VAT-inclusive), quiet-hours window, cancellation and no-show policy, pack terms — draft policy ready, see decision pack §2
 - [ ] Commission real photography (suites, chair, lounge, lockers); replace the Pinterest hot-links
 - [ ] WhatsApp Business account and message templates approved by Meta — start early, approval has lead time
-- [ ] Pick hosting and database providers; create the accounts — recommendation: Vercel + managed Postgres (Neon), see §4 Architecture
+- [ ] Pick hosting and database providers; create the accounts — recommendation: Vercel + managed Postgres (Neon), see §4 Architecture. **A Neon database exists for testing** (connection string held outside git, in `.env.local` — see the note under P1.3 below on why it isn't wired into Vercel yet)
 
 ### Phase 1: Launchable minimum. **In progress**
 
@@ -221,6 +221,12 @@ Sub-phases below match the P1.x tasks worked in order; tick a line only once it'
 - [x] Activity log wired to real actions (login, MFA enrollment, logout so far); a Data Access Layer (`requireStaffPage`/`requireStaffAction`) so every future admin page and Server Action re-checks auth itself, not just the page that renders the link to it
 - [x] `/staff/*` protected by both an optimistic proxy redirect (fast, no DB call) and an authoritative database check in the DAL (the one that actually decides access)
 - [x] 43 unit/integration tests (TOTP against official RFC 4226 test vectors, password hashing, lockout against a real Postgres, role table) plus a 15-assertion end-to-end run against a real built-and-started server covering the whole flow: unauthenticated redirect, wrong password, first-login enrollment, wrong code, correct code, session survives reload, sign-out, re-protection, second login without re-enrollment
+
+> **Note for future sessions — a real outage, and why P1.3 isn't started from scratch:** P1.3's read path (the whole site fetching content and prices from Postgres) was built, tested locally against a real Postgres, and merged — then immediately reverted, because it made **every page** require a reachable `DATABASE_URL` at request time, and Vercel's production deployment has none configured. The live site went down (every page threw a server error) until the revert landed. The work isn't lost — it's sitting in `main`'s git history (the commit that introduced it, then the commit that reverted it) and is straightforward to re-apply — but it must not be re-landed until **both** of these are true in Vercel, not just locally:
+> 1. `DATABASE_URL` set as an environment variable in the Vercel project (Production, and ideally Preview), pointing at a real reachable Postgres (a Neon database already exists for this — see the Phase 0 checklist above).
+> 2. That database has migrations applied (`pnpm db:migrate`) and is seeded (`pnpm db:seed`) — an unmigrated/empty database fails differently but just as completely.
+>
+> The lesson generalizes beyond this one revert: the P1.2 phase fixed the same class of bug for *module imports* (`db/client.ts`'s lazy-connection Proxy, so `next build` never needs a database); this outage is the same bug one layer up, for *rendering*. Both are now handled by the code (`force-dynamic` + the lazy client), but neither helps if production has no database to actually connect *to*. Verify against the real deployed site, not just a local build, before calling database-dependent work done.
 
 - [ ] **P1.3** — Admin editing: session types and prices (price history), hours, holidays, suites, maintenance blocks, address, contact and social links (WhatsApp and Instagram in the footer), website text and photos, FAQs
 - [ ] **P1.3** — Website reads all content and prices from the database instead of `src/data/*.ts`
@@ -277,4 +283,5 @@ Sub-phases below match the P1.x tasks worked in order; tick a line only once it'
 | 2026-09-25 | — | This plan saved to `CLAUDE.md` | (this commit) |
 | 2026-09-25 | 0 | Owner decision pack: payment provider comparison, draft cancellation and privacy policies, go-live checklist | see `docs/phase-0-decisions.md` |
 | 2026-09-25 | P1.1 | Full schema (30 tables), the no-double-booking and append-only-ledger database guarantees, migrations, seed script, 12 passing tests against a real Postgres | `21a960e` |
-| 2026-09-25 | P1.2 | Staff sign-in with mandatory TOTP two-step verification, roles and the full capability table, database-backed sessions, login lockout, activity log, a Data Access Layer every future admin page and action goes through; 43 unit tests plus a 15-assertion end-to-end run | (this commit) |
+| 2026-09-25 | P1.2 | Staff sign-in with mandatory TOTP two-step verification, roles and the full capability table, database-backed sessions, login lockout, activity log, a Data Access Layer every future admin page and action goes through; 43 unit tests plus a 15-assertion end-to-end run. Also fixed a real Vercel build failure this phase exposed: `db/client.ts` threw on missing `DATABASE_URL` at module-import time, which broke the build the moment any page imported it — the connection is now opened lazily, on first real query | `8ac1301`, `0785017` (PR #5) |
+| 2026-09-25 | P1.3 | Built and merged the database read path (PR #6), then reverted it (PR #7) within minutes: it required a reachable `DATABASE_URL` in production, which Vercel doesn't have configured, and the live site went down. See the note above P1.3's checklist for what has to be true before re-landing it. Nothing about the code was wrong — `pnpm build` and a full local verification both passed — the gap was entirely in deployment configuration outside this repo | `d966b4c` (PR #6, reverted), `7a5ca72` (PR #7) |
