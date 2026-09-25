@@ -16,7 +16,6 @@ import * as schema from "./schema"
 import {
   clients,
   companyAccounts,
-  contentBlocks,
   faqs,
   locations,
   packProducts,
@@ -391,110 +390,6 @@ async function seedSocialLinks(locationId: string) {
   console.log(`  social links: ${links.length}`)
 }
 
-/**
- * Freeform copy that doesn't have its own column anywhere — the tagline,
- * the hygiene protocol, the shelf — keyed the way the site looks it up.
- * See `src/server/db/content.ts` for the reader side and the exact shape
- * each key's `value` is expected to hold.
- */
-async function seedContentBlocks(locationId: string) {
-  const blocks: { key: string; value: unknown }[] = [
-    { key: "site.tagline", value: "A chair. A quiet room. Time to think." },
-    {
-      key: "site.description",
-      value:
-        "Private automated massage suites in Kigali. You are not touched by anyone. Book a chair, close the door, and let the machine work.",
-    },
-    { key: "hours.note", value: "Last session starts one hour before closing." },
-    {
-      key: "hours.walkins",
-      value: "Walk-ins are welcome when a suite is free. Booking guarantees one.",
-    },
-    {
-      key: "contact.responseTime",
-      value: "We reply to WhatsApp within the hour, and to email within one working day.",
-    },
-    {
-      key: "payments.note",
-      value:
-        "Suites are paid for when you book. Cancel free of charge up to four hours before your session and we refund in full.",
-    },
-    {
-      key: "hygiene_protocol",
-      value: [
-        {
-          label: "Between every guest",
-          detail:
-            "The chair cover and headrest cloth are removed and replaced with a freshly laundered set. Nobody sits on the cover you sat on.",
-        },
-        {
-          label: "Fifteen minutes",
-          detail:
-            "Every booking reserves the suite for fifteen minutes longer than your session. That gap is turnover time — it is built into the schedule, not squeezed in while you wait.",
-        },
-        {
-          label: "Every surface",
-          detail:
-            "Control panel, armrests, leg wells and door handle are wiped down with medical-grade disinfectant after each session.",
-        },
-        {
-          label: "Every room",
-          detail:
-            "The suite is aired and the air filter runs between guests. You enter a room that has been reset, not just vacated.",
-        },
-      ],
-    },
-    {
-      key: "visit_steps",
-      value: [
-        {
-          time: "−05:00",
-          title: "You arrive",
-          body: "Reception checks you in and shows you the suite. Lock your phone away or keep it — we hand you a key either way and never ask which.",
-        },
-        {
-          time: "00:00",
-          title: "You close the door",
-          body: "The suite is yours alone and locks from the inside. Nobody comes in during your session, and there is no attendant in the room.",
-        },
-        {
-          time: "00:01",
-          title: "The chair does the work",
-          body: "One panel, one start button. It measures your shoulders, reclines, and begins. Turn the intensity up or down, or stop it, at any moment.",
-        },
-        {
-          time: "00:30",
-          title: "You sit in the lounge",
-          body: "When the programme ends, the reading room is yours for as long as you want it. Tea is poured. There is no clock on the wall.",
-        },
-      ],
-    },
-    {
-      key: "shelf",
-      value: {
-        note: "A small shelf, changed each month. Take anything down. Nothing is for sale.",
-        titles: [
-          { title: "Silence in the Age of Noise", author: "Erling Kagge" },
-          { title: "The Idea of the Brain", author: "Matthew Cobb" },
-          { title: "A Field Guide to Getting Lost", author: "Rebecca Solnit" },
-          { title: "Wintering", author: "Katherine May" },
-          { title: "Thinking, Fast and Slow", author: "Daniel Kahneman" },
-          { title: "The Poetics of Space", author: "Gaston Bachelard" },
-        ],
-      },
-    },
-  ]
-
-  for (const block of blocks) {
-    const existing = await db.query.contentBlocks.findFirst({
-      where: (c, { and, eq }) => and(eq(c.locationId, locationId), eq(c.key, block.key)),
-    })
-    if (existing) continue
-    await db.insert(contentBlocks).values({ locationId, key: block.key, value: block.value })
-  }
-  console.log(`  content blocks: ${blocks.length}`)
-}
-
 const STAFF_SEED = [
   { email: "owner@amari.rw", name: "Amari Owner", role: "owner" as const },
   { email: "manager@amari.rw", name: "Amari Manager", role: "manager" as const },
@@ -525,7 +420,6 @@ async function main() {
   await seedPacks(location.id, sessionTypeIdBySlug)
   await seedFaqs(location.id)
   await seedSocialLinks(location.id)
-  await seedContentBlocks(location.id)
   await seedStaff()
   console.log("Done.")
   process.exit(0)

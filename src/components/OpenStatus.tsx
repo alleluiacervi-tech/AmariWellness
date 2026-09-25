@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState } from "react"
-import type { HoursSchedule } from "@/components/Hours"
+import { SITE_CONFIG } from "@/data/site"
 
 type Status = { open: boolean; text: string; time: string }
 
@@ -31,8 +31,8 @@ function kigaliNow() {
   }
 }
 
-function compute(schedule: HoursSchedule): Status {
-  const { weekday, weekend } = schedule
+function compute(): Status {
+  const { weekday, weekend } = SITE_CONFIG.hours.schedule
   const now = kigaliNow()
   const today = now.weekend ? weekend : weekday
   const tomorrow = now.tomorrowWeekend ? weekend : weekday
@@ -43,21 +43,15 @@ function compute(schedule: HoursSchedule): Status {
   return { open: false, text: "Closed, opens tomorrow at", time: pad(tomorrow.open) }
 }
 
-export default function OpenStatus({
-  schedule,
-  className = "",
-}: {
-  schedule: HoursSchedule
-  className?: string
-}) {
+export default function OpenStatus({ className = "" }: { className?: string }) {
   const [status, setStatus] = useState<Status | null>(null)
 
   useEffect(() => {
-    const tick = () => setStatus(compute(schedule))
+    const tick = () => setStatus(compute())
     tick()
     const id = window.setInterval(tick, 60_000)
     return () => window.clearInterval(id)
-  }, [schedule])
+  }, [])
 
   return (
     <span

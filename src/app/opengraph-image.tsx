@@ -1,30 +1,25 @@
 import { ImageResponse } from "next/og"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { getSessionTypes } from "@/server/db/content"
+import { SESSIONS } from "@/data/sessions"
 
 export const alt =
   "Amari — A chair. A quiet room. Time to think. Private massage suites in Kimihurura, Kigali."
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
-// Reads the cheapest session's live price — see the note on `dynamic` in
-// src/app/layout.tsx for why this can't run at build time.
-export const dynamic = "force-dynamic"
 
 const asset = (path: string) => readFile(join(process.cwd(), "src/assets", path))
 
 /* The share card, drawn from the same tokens as the site: paper ground,
    forest ink, serif headline with its sage italic, the arch, the dial. */
 export default async function OpenGraphImage() {
-  const [serif, serifItalic, sans, mono, mark, sessions] = await Promise.all([
+  const [serif, serifItalic, sans, mono, mark] = await Promise.all([
     asset("fonts/InstrumentSerif-Regular.ttf"),
     asset("fonts/InstrumentSerif-Italic.ttf"),
     asset("fonts/DMSans-Medium.ttf"),
     asset("fonts/DMMono-Regular.ttf"),
     asset("amari-mark.svg"),
-    getSessionTypes(),
   ])
-  const cheapest = sessions[0]?.price ?? ""
   const markSrc = `data:image/svg+xml;base64,${mark.toString("base64")}`
 
   return new ImageResponse(
@@ -66,7 +61,7 @@ export default async function OpenGraphImage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ fontFamily: "Instrument Serif", fontSize: 32, lineHeight: 1 }}>Amari</span>
               <span style={{ fontFamily: "DM Mono", fontSize: 17, color: "#7d6210" }}>
-                15, 30 or 60 minutes, from {cheapest}
+                15, 30 or 60 minutes, from {SESSIONS[0].price}
               </span>
             </div>
           </div>

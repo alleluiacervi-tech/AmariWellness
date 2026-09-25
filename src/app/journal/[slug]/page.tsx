@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "@/components/Link"
 import { ArrowLeft } from "@/components/icons"
 import { ARTICLES, isoDate } from "@/data/journal"
-import { getSessionTypes } from "@/server/db/content"
+import { SESSIONS } from "@/data/sessions"
 import { OPEN_GRAPH_BASE } from "@/lib/metadata"
 
 type Props = { params: Promise<{ slug: string }> }
@@ -38,8 +38,6 @@ export default async function ArticlePage({ params }: Props) {
   if (index === -1) notFound()
   const article = ARTICLES[index]
   const next = ARTICLES[(index + 1) % ARTICLES.length]
-  const sessions = await getSessionTypes()
-  const cheapest = sessions[0]?.price ?? ""
 
   return (
     <main id="main-content">
@@ -66,7 +64,7 @@ export default async function ArticlePage({ params }: Props) {
               <p className="h4">Make time for nothing.</p>
               <p className="meta">
                 A private suite, from{" "}
-                <span className="data">{cheapest}</span> for fifteen
+                <span className="data">{SESSIONS[0].price}</span> for fifteen
                 minutes.
               </p>
             </div>

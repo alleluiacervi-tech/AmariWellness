@@ -11,26 +11,17 @@ import { useState } from "react"
 import Dial from "@/components/Dial"
 import Link from "@/components/Link"
 import OpenStatus from "@/components/OpenStatus"
-import { FEATURED_SESSION_ID, OFF_PEAK } from "@/data/sessions"
-import type { HoursSchedule } from "@/components/Hours"
-import type { SessionItem } from "@/server/db/content"
+import { FEATURED_SESSION_ID, OFF_PEAK, SESSIONS } from "@/data/sessions"
 
-export default function HeroTime({
-  sessions,
-  schedule,
-}: {
-  sessions: SessionItem[]
-  schedule: HoursSchedule
-}) {
+export default function HeroTime() {
   const [id, setId] = useState(FEATURED_SESSION_ID)
-  const session = sessions.find((s) => s.id === id) ?? sessions[1] ?? sessions[0]
-  if (!session) return null
+  const session = SESSIONS.find((s) => s.id === id) ?? SESSIONS[1]
 
   return (
     <div className="instrument">
       <fieldset className="segmented">
         <legend className="sr-only">How long have you got?</legend>
-        {sessions.map((s) => (
+        {SESSIONS.map((s) => (
           <label key={s.id}>
             <input
               type="radio"
@@ -63,7 +54,7 @@ export default function HeroTime({
         <Link className="btn" href={`/book?session=${session.id}`}>
           Book {session.durationMinutes} minutes
         </Link>
-        <OpenStatus schedule={schedule} />
+        <OpenStatus />
       </div>
     </div>
   )

@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import BookingFlowFromParams, { BookingFlow } from "@/components/BookingFlow"
-import { getSessionTypes, getSiteConfig } from "@/server/db/content"
 import { pageMetadata } from "@/lib/metadata"
 
 export const metadata = pageMetadata({
@@ -10,8 +9,7 @@ export const metadata = pageMetadata({
   path: "/book",
 })
 
-export default async function BookPage() {
-  const [sessions, siteConfig] = await Promise.all([getSessionTypes(), getSiteConfig()])
+export default function BookPage() {
   return (
     <main id="main-content" className="wrap booking">
       <div className="booking__head">
@@ -28,8 +26,8 @@ export default async function BookPage() {
       </div>
       {/* The server renders the flow with the default session; the
           URL's ?session= takes over once the page is interactive. */}
-      <Suspense fallback={<BookingFlow sessions={sessions} siteConfig={siteConfig} />}>
-        <BookingFlowFromParams sessions={sessions} siteConfig={siteConfig} />
+      <Suspense fallback={<BookingFlow />}>
+        <BookingFlowFromParams />
       </Suspense>
     </main>
   )
