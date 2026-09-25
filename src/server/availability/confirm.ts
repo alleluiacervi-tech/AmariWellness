@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm"
 import type { Database, Tx } from "../db/client"
 import { bookings, ledgerEntries, payments, type PaymentMethod } from "../db/schema"
 import { generateQrToken } from "../qr"
+import { sandboxProvider } from "../payments/sandbox"
 
 export class BookingNotHeldError extends Error {
   constructor() {
@@ -52,6 +53,39 @@ async function finalizeConfirmedBooking(
   })
 
   return booking
+}
+
+/**
+ * Starts a sandbox charge against a held booking: a "pending" payment
+ * row, exactly like a real MoMo/Airtel/card charge would leave before
+ * its provider confirms. The booking stays "held" — only
+ * `confirmSandboxPayment` below (standing in for the provider's
+ * webhook) moves it to "confirmed".
+ */
+export async function beginSandboxPayment(
+  db: Database,
+  input: { locationId: string; bookingId: string; clientId: string; amountRwf: number; method: PaymentMethod; phone?: string },
+) {
+  const charge = await sandboxProvider.charge({
+    reference: input.bookingId,
+    amountRwf: input.amountRwf,
+    method: input.method,
+    phone: input.phone,
+  })
+  const [payment] = await db
+    .insert(payments)
+    .values({
+      locationId: input.locationId,
+      provider: sandboxProvider.name,
+      providerReference: charge.providerReference,
+      bookingId: input.bookingId,
+      clientId: input.clientId,
+      amountRwf: input.amountRwf,
+      method: input.method,
+      status: charge.status,
+    })
+    .returning()
+  return payment
 }
 
 /** The sandbox "pay" step (Phase 1.4b) calls this once it simulates the provider confirming — standing in for a real provider's webhook, which would call the same finalize logic from a signed callback instead. */

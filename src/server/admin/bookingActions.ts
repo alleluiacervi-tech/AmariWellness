@@ -31,7 +31,8 @@ import { recordActivity } from "../auth/activity"
 import { getLocation } from "../db/content"
 import { createHold, SlotTakenError } from "../availability/createHold"
 import { recordWalkInPayment } from "../availability/confirm"
-import { isWeekend, kigaliWallTimeToUtc } from "../availability/slots"
+import { kigaliWallTimeToUtc } from "../availability/slots"
+import { priceForSlot } from "../availability/pricing"
 import { findOrCreateClient } from "../people/findOrCreateClient"
 import { refundBooking, RefundError } from "../ledger/refund"
 import { applyDiscount, DiscountError } from "../ledger/discount"
@@ -70,8 +71,7 @@ export async function createWalkInBooking(_prev: ActionState, formData: FormData
   const minute = Number(minuteText)
   const startAt = kigaliWallTimeToUtc(date, hour, minute)
   const endAt = new Date(startAt.getTime() + (sessionType.durationMinutes + location.turnoverMinutes) * 60_000)
-  const offPeak = !isWeekend(date) && hour < location.quietHoursEndHour
-  const priceRwf = offPeak ? price.offPeakPriceRwf : price.priceRwf
+  const { priceRwf, offPeak } = priceForSlot(price, location, date, hour)
 
   const client = await findOrCreateClient({ name: clientName, phone: clientPhone || null, healthAcknowledged: true })
 

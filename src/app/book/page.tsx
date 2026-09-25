@@ -1,5 +1,6 @@
-import { Suspense } from "react"
-import BookingFlowFromParams, { BookingFlow } from "@/components/BookingFlow"
+import RealBookingFlow from "@/components/RealBookingFlow"
+import { getSessionTypes, getSiteConfig } from "@/server/db/content"
+import { getClientSessionState } from "@/server/client-auth/dal"
 import { pageMetadata } from "@/lib/metadata"
 
 export const metadata = pageMetadata({
@@ -9,26 +10,43 @@ export const metadata = pageMetadata({
   path: "/book",
 })
 
-export default function BookPage() {
+/**
+ * The real booking flow (Phase 1.4b — see CLAUDE.md). Unlike every other
+ * public page, this one can't stay static: checking whether a slot is
+ * genuinely free means asking the database at request time. Sessions
+ * and site config are fetched here, once per request, and handed down
+ * as props — the client component never reads `src/data/*.ts`.
+ */
+export default async function BookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session?: string }>
+}) {
+  const [sessions, siteConfig, sessionState, params] = await Promise.all([
+    getSessionTypes(),
+    getSiteConfig(),
+    getClientSessionState(),
+    searchParams,
+  ])
+  const client =
+    sessionState.status === "authenticated" && sessionState.client.phone
+      ? {
+          id: sessionState.client.id,
+          name: sessionState.client.name,
+          phone: sessionState.client.phone,
+          needsHealthAck: !sessionState.client.healthAcknowledgedAt,
+        }
+      : null
+  const initialSessionId = sessions.find((s) => s.id === params.session)?.id ?? sessions[0]?.id
+
   return (
     <main id="main-content" className="wrap booking">
       <div className="booking__head">
         <div className="booking__intro enter">
           <h1 className="h1">Book your quiet moment.</h1>
         </div>
-        <div className="stack--tight items-start">
-          <span className="tag tag--outline">Interactive design preview</span>
-          <p className="meta max-w-[46ch]">
-            Try it with sample details. No reservation, payment or message is
-            sent.
-          </p>
-        </div>
       </div>
-      {/* The server renders the flow with the default session; the
-          URL's ?session= takes over once the page is interactive. */}
-      <Suspense fallback={<BookingFlow />}>
-        <BookingFlowFromParams />
-      </Suspense>
+      <RealBookingFlow sessions={sessions} siteConfig={siteConfig} client={client} initialSessionId={initialSessionId} />
     </main>
   )
 }

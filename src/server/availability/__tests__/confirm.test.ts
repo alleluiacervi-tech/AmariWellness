@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { eq } from "drizzle-orm"
 import { closeTestDatabase, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
 import { bookings, ledgerEntries, payments } from "../../db/schema"
-import { BookingNotHeldError, PaymentNotPendingError, confirmSandboxPayment, recordWalkInPayment } from "../confirm"
+import { BookingNotHeldError, PaymentNotPendingError, beginSandboxPayment, confirmSandboxPayment, recordWalkInPayment } from "../confirm"
 import { createHold } from "../createHold"
 
 const START = new Date("2027-01-10T10:00:00Z")
@@ -33,6 +33,38 @@ beforeEach(async () => {
 })
 afterAll(async () => {
   await closeTestDatabase()
+})
+
+describe("beginSandboxPayment", () => {
+  it("creates a pending payment without touching the booking's status", async () => {
+    const { location, client, booking } = await heldBooking()
+    const payment = await beginSandboxPayment(testDb, {
+      locationId: location.id,
+      bookingId: booking.id,
+      clientId: client.id,
+      amountRwf: 15000,
+      method: "momo",
+      phone: "+250780000001",
+    })
+    expect(payment.status).toBe("pending")
+    expect(payment.provider).toBe("sandbox")
+
+    const [bookingAfter] = await testDb.select().from(bookings).where(eq(bookings.id, booking.id))
+    expect(bookingAfter.status).toBe("held")
+  })
+
+  it("chains into confirmSandboxPayment to reach a confirmed booking", async () => {
+    const { location, client, booking } = await heldBooking()
+    const payment = await beginSandboxPayment(testDb, {
+      locationId: location.id,
+      bookingId: booking.id,
+      clientId: client.id,
+      amountRwf: 15000,
+      method: "airtel",
+    })
+    const confirmed = await confirmSandboxPayment(testDb, payment.id)
+    expect(confirmed.status).toBe("confirmed")
+  })
 })
 
 describe("confirmSandboxPayment", () => {
