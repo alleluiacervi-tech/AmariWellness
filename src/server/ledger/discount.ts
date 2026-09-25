@@ -4,6 +4,7 @@
 import { eq } from "drizzle-orm"
 import type { Database } from "../db/client"
 import { bookings, ledgerEntries } from "../db/schema"
+import { netKeptForBooking } from "./refund"
 
 export class DiscountError extends Error {}
 
@@ -26,6 +27,10 @@ export async function applyDiscount(
   if (!booking) throw new DiscountError("Booking not found.")
   if (booking.status !== "confirmed" && booking.status !== "checked_in" && booking.status !== "completed") {
     throw new DiscountError("Only a confirmed booking can receive a discount.")
+  }
+  const net = await netKeptForBooking(db, booking.id)
+  if (input.amountRwf > net) {
+    throw new DiscountError(`The discount cannot exceed what's still held for this booking (${net.toLocaleString("en-RW")} RWF).`)
   }
 
   await db.insert(ledgerEntries).values({

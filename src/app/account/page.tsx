@@ -26,10 +26,10 @@ const STATUS_NOTE: Record<ClientBookingRow["status"], string> = {
   checked_in: "Checked in",
   completed: "Completed",
   cancelled: "Cancelled",
-  no_show: "No-show",
+  no_show: "Missed",
 }
 
-/** Phase 1.4b — see CLAUDE.md. Real bookings for the signed-in client; packs and vouchers aren't built yet (Phase 2), so that panel from the earlier design preview is dropped rather than shown with fake numbers. */
+/** Phase 1.4b/1.5 — see CLAUDE.md. Real bookings for the signed-in client; each links to its own page (`/account/bookings/[id]`) with the QR, the receipt, and moving or cancelling within the policy. Packs and vouchers aren't built yet (Phase 2), so that panel from the earlier design preview is dropped rather than shown with fake numbers. */
 export default async function AccountPage() {
   const client = await requireClientPage()
   const allBookings = await getBookingsForClient(client.id)
@@ -73,7 +73,9 @@ export default async function AccountPage() {
                     {day} <span className="font-mono">{time}</span>
                   </span>
                   <span className="h4">{b.sessionName}</span>
-                  <span className="visit__note">{b.suiteName}</span>
+                  <Link className="tlink" href={`/account/bookings/${b.id}`}>
+                    QR code and changes
+                  </Link>
                 </li>
               )
             })}
@@ -98,7 +100,10 @@ export default async function AccountPage() {
                   </span>
                   <span className="h4">{b.sessionName}</span>
                   <span className="visit__note">
-                    {b.suiteName} — {STATUS_NOTE[b.status]}
+                    {STATUS_NOTE[b.status]},{" "}
+                    <Link className="tlink" href={`/account/bookings/${b.id}`}>
+                      receipt
+                    </Link>
                   </span>
                 </li>
               )

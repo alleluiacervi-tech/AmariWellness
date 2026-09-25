@@ -2,8 +2,8 @@
 // as a parameter rather than importing the app's singleton, so this is
 // directly testable in a plain vitest run against a real Postgres — see
 // `src/server/auth/lockout.ts` for the same reasoning applied first.
-import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm"
-import type { Database } from "../db/client"
+import { and, asc, eq, gt, inArray, isNull, lt, ne, or } from "drizzle-orm"
+import type { Database, Tx } from "../db/client"
 import { bookings, maintenanceBlocks, suites } from "../db/schema"
 
 const LIVE_BOOKING_STATUSES = ["confirmed", "checked_in"] as const
@@ -19,7 +19,14 @@ const LIVE_BOOKING_STATUSES = ["confirmed", "checked_in"] as const
  * deciding where to *try* a booking, not the source of truth — the
  * exclusion constraint is that, and always has the final word.
  */
-export async function suiteHasConflict(db: Database, suiteId: string, startAt: Date, endAt: Date): Promise<boolean> {
+export async function suiteHasConflict(
+  db: Database | Tx,
+  suiteId: string,
+  startAt: Date,
+  endAt: Date,
+  /** A booking being moved doesn't conflict with its own current time. */
+  excludeBookingId?: string,
+): Promise<boolean> {
   const now = new Date()
   const [bookingConflict] = await db
     .select({ id: bookings.id })
@@ -27,6 +34,7 @@ export async function suiteHasConflict(db: Database, suiteId: string, startAt: D
     .where(
       and(
         eq(bookings.suiteId, suiteId),
+        excludeBookingId ? ne(bookings.id, excludeBookingId) : undefined,
         lt(bookings.startAt, endAt),
         gt(bookings.endAt, startAt),
         or(
@@ -50,10 +58,11 @@ export async function suiteHasConflict(db: Database, suiteId: string, startAt: D
 
 /** The first active suite (by `sortOrder`) with no conflict for the span — or null if every suite is taken or blocked. */
 export async function pickAvailableSuite(
-  db: Database,
+  db: Database | Tx,
   locationId: string,
   startAt: Date,
   endAt: Date,
+  excludeBookingId?: string,
 ): Promise<string | null> {
   const activeSuites = await db
     .select({ id: suites.id })
@@ -62,7 +71,7 @@ export async function pickAvailableSuite(
     .orderBy(asc(suites.sortOrder))
 
   for (const suite of activeSuites) {
-    if (!(await suiteHasConflict(db, suite.id, startAt, endAt))) return suite.id
+    if (!(await suiteHasConflict(db, suite.id, startAt, endAt, excludeBookingId))) return suite.id
   }
   return null
 }

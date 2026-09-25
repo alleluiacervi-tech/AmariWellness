@@ -1,7 +1,7 @@
 import "server-only"
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { db } from "../db/client"
-import { bookings, sessionTypes, suites, type BookingStatus } from "../db/schema"
+import { bookings, ledgerEntries, payments, sessionTypes, suites, type BookingStatus, type PaymentMethod } from "../db/schema"
 
 export type ClientBookingRow = {
   id: string
@@ -31,4 +31,87 @@ export async function getBookingsForClient(clientId: string): Promise<ClientBook
     .where(eq(bookings.clientId, clientId))
     .orderBy(desc(bookings.startAt))
   return rows
+}
+
+export type ClientBookingDetail = {
+  id: string
+  sessionTypeId: string
+  sessionName: string
+  durationMinutes: number
+  suiteName: string
+  startAt: Date
+  status: BookingStatus
+  source: "online" | "walk_in" | "phone"
+  priceAtBookingRwf: number
+  qrToken: string | null
+  createdAt: Date
+  checkedInAt: Date | null
+  cancelledAt: Date | null
+  cancelReason: string | null
+  payment: {
+    method: PaymentMethod
+    amountRwf: number
+    status: string
+    providerReference: string
+    paidAt: Date
+  } | null
+  /** Sums of this booking's ledger entries — the receipt shows money moved, never an editable number. */
+  money: { paidRwf: number; discountRwf: number; refundedRwf: number }
+}
+
+/** One of the signed-in client's bookings, with what a receipt needs — or null if it isn't theirs. The client id is part of the query, not a check after it. */
+export async function getClientBooking(clientId: string, bookingId: string): Promise<ClientBookingDetail | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(bookingId)) return null
+  const [row] = await db
+    .select({
+      id: bookings.id,
+      sessionTypeId: sessionTypes.id,
+      sessionName: sessionTypes.name,
+      durationMinutes: sessionTypes.durationMinutes,
+      suiteName: suites.name,
+      startAt: bookings.startAt,
+      status: bookings.status,
+      source: bookings.source,
+      priceAtBookingRwf: bookings.priceAtBookingRwf,
+      qrToken: bookings.qrToken,
+      createdAt: bookings.createdAt,
+      checkedInAt: bookings.checkedInAt,
+      cancelledAt: bookings.cancelledAt,
+      cancelReason: bookings.cancelReason,
+    })
+    .from(bookings)
+    .innerJoin(sessionTypes, eq(sessionTypes.id, bookings.sessionTypeId))
+    .innerJoin(suites, eq(suites.id, bookings.suiteId))
+    .where(and(eq(bookings.id, bookingId), eq(bookings.clientId, clientId)))
+    .limit(1)
+  if (!row) return null
+
+  const paymentRows = await db
+    .select()
+    .from(payments)
+    .where(eq(payments.bookingId, row.id))
+    .orderBy(desc(payments.createdAt))
+  // The payment that actually went through (now "succeeded" or later
+  // "refunded"), not an abandoned attempt.
+  const payment = paymentRows.find((p) => p.status === "succeeded" || p.status === "refunded") ?? null
+
+  const entries = await db
+    .select({ type: ledgerEntries.type, amountRwf: ledgerEntries.amountRwf })
+    .from(ledgerEntries)
+    .where(eq(ledgerEntries.bookingId, row.id))
+  const sum = (type: string) => entries.filter((e) => e.type === type).reduce((total, e) => total + e.amountRwf, 0)
+
+  return {
+    ...row,
+    payment: payment
+      ? {
+          method: payment.method,
+          amountRwf: payment.amountRwf,
+          status: payment.status,
+          providerReference: payment.providerReference,
+          paidAt: payment.createdAt,
+        }
+      : null,
+    money: { paidRwf: sum("payment_received"), discountRwf: -sum("discount_applied"), refundedRwf: -sum("refund") },
+  }
 }

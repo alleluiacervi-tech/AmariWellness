@@ -1,8 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { closeTestDatabase, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
 import { bookings, ledgerEntries, payments } from "../../db/schema"
-import { RefundError, refundBooking } from "../refund"
+import { RefundError, netKeptForBooking, refundBooking } from "../refund"
+import { applyDiscount } from "../discount"
 
 const STAFF_ID = "00000000-0000-4000-8000-000000000099"
 
@@ -34,6 +35,15 @@ async function confirmedBookingWithPayment(amountRwf = 15000) {
       status: "succeeded",
     })
     .returning()
+  // Every real confirmation writes this alongside the payment (see availability/confirm.ts).
+  await testDb.insert(ledgerEntries).values({
+    locationId: location.id,
+    type: "payment_received",
+    amountRwf,
+    bookingId: booking.id,
+    paymentId: payment.id,
+    clientId: client.id,
+  })
   return { location, client, booking, payment }
 }
 
@@ -57,16 +67,19 @@ describe("refundBooking", () => {
     expect(paymentAfter.status).toBe("refunded")
 
     const entries = await testDb.select().from(ledgerEntries).where(eq(ledgerEntries.bookingId, booking.id))
-    expect(entries).toHaveLength(1)
-    expect(entries[0].type).toBe("refund")
-    expect(entries[0].amountRwf).toBe(-15000)
-    expect(entries[0].reason).toBe("Chair malfunctioned")
+    expect(entries.map((e) => e.type).sort()).toEqual(["payment_received", "refund"])
+    const refund = entries.find((e) => e.type === "refund")!
+    expect(refund.amountRwf).toBe(-15000)
+    expect(refund.reason).toBe("Chair malfunctioned")
   })
 
   it("allows a partial refund smaller than the amount paid", async () => {
     const { booking } = await confirmedBookingWithPayment(15000)
     await refundBooking(testDb, { bookingId: booking.id, amountRwf: 5000, reason: "Partial goodwill refund", staffUserId: STAFF_ID })
-    const [entry] = await testDb.select().from(ledgerEntries).where(eq(ledgerEntries.bookingId, booking.id))
+    const [entry] = await testDb
+      .select()
+      .from(ledgerEntries)
+      .where(and(eq(ledgerEntries.bookingId, booking.id), eq(ledgerEntries.type, "refund")))
     expect(entry.amountRwf).toBe(-5000)
   })
 
@@ -109,5 +122,15 @@ describe("refundBooking", () => {
     await expect(
       refundBooking(testDb, { bookingId: booking.id, amountRwf: 5000, reason: "x", staffUserId: STAFF_ID }),
     ).rejects.toThrow(RefundError)
+  })
+
+  it("never refunds more than is still held after a discount", async () => {
+    const { booking } = await confirmedBookingWithPayment(15000)
+    await applyDiscount(testDb, { bookingId: booking.id, amountRwf: 3000, reason: "Chair acting up", staffUserId: STAFF_ID })
+    await expect(
+      refundBooking(testDb, { bookingId: booking.id, amountRwf: 15000, reason: "Full refund", staffUserId: STAFF_ID }),
+    ).rejects.toThrow(/12,000 RWF after discounts/)
+    await refundBooking(testDb, { bookingId: booking.id, amountRwf: 12000, reason: "Refund the rest", staffUserId: STAFF_ID })
+    expect(await netKeptForBooking(testDb, booking.id)).toBe(0)
   })
 })

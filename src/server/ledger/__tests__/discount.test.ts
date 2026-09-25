@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { closeTestDatabase, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
 import { bookings, ledgerEntries } from "../../db/schema"
 import { DiscountError, applyDiscount } from "../discount"
@@ -21,6 +21,16 @@ async function bookingWithStatus(status: "held" | "confirmed" | "checked_in" | "
       priceAtBookingRwf: 15000,
     })
     .returning()
+  // A paid booking always carries its payment_received entry (see availability/confirm.ts); a hold has none.
+  if (status !== "held") {
+    await testDb.insert(ledgerEntries).values({
+      locationId: location.id,
+      type: "payment_received",
+      amountRwf: 15000,
+      bookingId: booking.id,
+      clientId: client.id,
+    })
+  }
   return booking
 }
 
@@ -36,7 +46,10 @@ describe("applyDiscount", () => {
     const booking = await bookingWithStatus("confirmed")
     await applyDiscount(testDb, { bookingId: booking.id, amountRwf: 1000, reason: "Chair was acting up", staffUserId: STAFF_ID })
 
-    const entries = await testDb.select().from(ledgerEntries).where(eq(ledgerEntries.bookingId, booking.id))
+    const entries = await testDb
+      .select()
+      .from(ledgerEntries)
+      .where(and(eq(ledgerEntries.bookingId, booking.id), eq(ledgerEntries.type, "discount_applied")))
     expect(entries).toHaveLength(1)
     expect(entries[0].type).toBe("discount_applied")
     expect(entries[0].amountRwf).toBe(-1000)
@@ -83,5 +96,13 @@ describe("applyDiscount", () => {
     await expect(
       applyDiscount(testDb, { bookingId: booking.id, amountRwf: -5, reason: "x", staffUserId: STAFF_ID }),
     ).rejects.toThrow(DiscountError)
+  })
+
+  it("never discounts more than is still held for the booking", async () => {
+    const booking = await bookingWithStatus("confirmed")
+    await applyDiscount(testDb, { bookingId: booking.id, amountRwf: 10000, reason: "x", staffUserId: STAFF_ID })
+    await expect(
+      applyDiscount(testDb, { bookingId: booking.id, amountRwf: 6000, reason: "x", staffUserId: STAFF_ID }),
+    ).rejects.toThrow(/5,000 RWF/)
   })
 })

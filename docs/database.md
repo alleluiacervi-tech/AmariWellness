@@ -50,9 +50,22 @@ allowed to, so it's created up front here.
   generated ones (same format, next `idx`). Both kinds run through the same
   `pnpm db:migrate`.
 
+A hand-written migration has no snapshot in `migrations/meta/`, so the next
+`pnpm db:generate` after one re-emits whatever it added. `0003_booking_notifications.sql`
+(the outbound message log, Phase 1.5) hit exactly this with 0002's two
+`staff_users` columns: they were deleted from the generated SQL by hand, and
+0003's snapshot now includes them, so the next generate starts clean. Read
+every generated file before committing it.
+
 Never edit a migration that has already been applied anywhere (including
 your own machine) — write a new one instead, the same as any other
 migration tool.
+
+**Deploying one:** run `pnpm db:migrate` against the production database
+*before* (or as part of) deploying code that reads a new table or column.
+Code that expects `notifications` against a database without migration 0003
+fails on every page that reads it — the same class of outage as the P1.3
+revert in `CLAUDE.md`.
 
 ## What the constraints actually guarantee
 
