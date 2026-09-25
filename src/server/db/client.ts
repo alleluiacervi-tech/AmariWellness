@@ -57,3 +57,5 @@ export const db = new Proxy({} as Database, {
   },
 })
 export type { Database }
+/** The type of `tx` inside `db.transaction(async (tx) => ...)` — for helpers (see `src/server/availability/`) called both with the plain `db` and from inside a transaction. */
+export type Tx = Parameters<Database["transaction"]>[0] extends (tx: infer T) => unknown ? T : never

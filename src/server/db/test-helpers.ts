@@ -9,6 +9,7 @@ import { expect } from "vitest"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 import * as schema from "./schema"
+import { clients, locations, sessionTypePrices, sessionTypes, suites } from "./schema"
 
 const connectionString = process.env.DATABASE_URL
 if (!connectionString) {
@@ -82,4 +83,56 @@ export async function expectPgError(promise: Promise<unknown>, pattern: RegExp) 
     const message = err instanceof Error ? ((err.cause as Error | undefined)?.message ?? err.message) : String(err)
     return pattern.test(message)
   })
+}
+
+/**
+ * A minimal location + suite(s) + session type + current price + client
+ * — the same shape `constraints.test.ts` builds by hand, factored out
+ * for the availability/ledger test suites (Phase 1.4a) that all need
+ * the same starting point. Call after `resetTestDatabase()`.
+ */
+export async function seedMinimalCatalog(options?: { suiteCount?: number }) {
+  const [location] = await testDb
+    .insert(locations)
+    .values({
+      name: "Test Location",
+      slug: "test",
+      street: "Test St",
+      neighborhood: "Test",
+      city: "Kigali",
+      holdMinutes: 10,
+      turnoverMinutes: 15,
+      quietHoursEndHour: 16,
+    })
+    .returning()
+
+  const suiteRows: (typeof suites.$inferSelect)[] = []
+  for (let i = 0; i < (options?.suiteCount ?? 1); i++) {
+    const [suite] = await testDb
+      .insert(suites)
+      .values({ locationId: location.id, name: `Suite ${i + 1}`, sortOrder: i })
+      .returning()
+    suiteRows.push(suite)
+  }
+
+  const [sessionType] = await testDb
+    .insert(sessionTypes)
+    .values({
+      locationId: location.id,
+      slug: "half",
+      name: "The Half Hour",
+      durationMinutes: 30,
+      label: "x",
+      intro: "x",
+      summary: "x",
+      about: "x",
+    })
+    .returning()
+  const [price] = await testDb
+    .insert(sessionTypePrices)
+    .values({ sessionTypeId: sessionType.id, priceRwf: 15000, offPeakPriceRwf: 12000 })
+    .returning()
+  const [client] = await testDb.insert(clients).values({ name: "Alex Guest", phone: "+250780000001" }).returning()
+
+  return { location, suites: suiteRows, suite: suiteRows[0], sessionType, price, client }
 }
