@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import Link from "@/components/Link"
 import OpenStatus from "@/components/OpenStatus"
 import { Close } from "@/components/icons"
-import { SITE_CONFIG } from "@/data/site"
+import type { SiteConfig } from "@/server/db/content"
 
 const LOGO = "/amari-horizontal.svg"
 
@@ -23,7 +23,7 @@ const MOBILE_LINKS = [
   { label: "My bookings", href: "/account" },
 ]
 
-export default function Nav() {
+export default function Nav({ siteConfig }: { siteConfig: SiteConfig }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
@@ -173,12 +173,12 @@ export default function Nav() {
             Book a session
           </Link>
           <div className="menu__footer">
-            <OpenStatus />
+            <OpenStatus schedule={siteConfig.hours.schedule} />
             <span>
-              {SITE_CONFIG.address.street}, {SITE_CONFIG.address.neighborhood},{" "}
-              {SITE_CONFIG.address.city}
+              {siteConfig.address.street}, {siteConfig.address.neighborhood},{" "}
+              {siteConfig.address.city}
             </span>
-            <span className="data">{SITE_CONFIG.contact.phone}</span>
+            <span className="data">{siteConfig.contact.phone}</span>
           </div>
         </div>
       )}

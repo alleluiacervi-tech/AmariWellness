@@ -1,28 +1,12 @@
-import { formatRWF } from '@/data/sessions'
-
 /* Prepaid packs replace monthly membership deliberately: recurring mobile-money
    billing is unreliable, and a one-time purchase achieves the same commitment
-   without a standing charge or a card on file. Pricing is a placeholder. */
+   without a standing charge or a card on file.
 
-export interface SessionPack {
-  id: string
-  name: string
-  price: string
-  priceNumber: number
-  perSession: string
-  perSessionNumber: number
-  /** Length of each session in the pack. */
-  sessionMinutes: number
-  sessions: string
-  validity: string
-  saving: string
-  description: string
-  includes: string[]
-  /** What this pack adds beyond the basics every pack shares (see PACK_BASICS). */
-  extras: string[]
-  cta: string
-  featured: boolean
-}
+   Pack names, prices and copy now live in the database — see
+   src/server/db/content.ts (getPackProducts) and Phase 1.3 in CLAUDE.md.
+   PACK_BASICS is a shared presentation constant with no row of its own
+   (see also GIFT_VOUCHER/CORPORATE below, which aren't purchasable yet —
+   Phase 2). */
 
 /** True of every pack, so it is said once. */
 export const PACK_BASICS = [
@@ -30,80 +14,6 @@ export const PACK_BASICS = [
   'Balance kept against your phone number',
   'Shareable with anyone you bring',
   'Lounge access on every visit',
-]
-
-export const PACKS: SessionPack[] = [
-  {
-    id: 'five-half',
-    name: 'Five Half Hours',
-    price: formatRWF(67000),
-    priceNumber: 67000,
-    perSession: `${formatRWF(13400)} a session`,
-    perSessionNumber: 13400,
-    sessionMinutes: 30,
-    extras: [],
-    sessions: '5 × 30-minute sessions',
-    validity: 'Valid for 2 months',
-    saving: `Saves ${formatRWF(8000)}`,
-    description:
-      'A reasonable place to start. Five sessions is enough to find out whether this becomes part of your week or stays an occasional thing.',
-    includes: [
-      '5 sessions of 30 minutes, used whenever you like',
-      'Balance tracked against your phone number',
-      'Shareable — bring whoever you want',
-      'Lounge access on every visit',
-    ],
-    cta: 'Buy five sessions',
-    featured: false,
-  },
-  {
-    id: 'ten-half',
-    name: 'Ten Half Hours',
-    price: formatRWF(127000),
-    priceNumber: 127000,
-    perSession: `${formatRWF(12700)} a session`,
-    perSessionNumber: 12700,
-    sessionMinutes: 30,
-    extras: ['Priority booking on evening slots'],
-    sessions: '10 × 30-minute sessions',
-    validity: 'Valid for 3 months',
-    saving: `Saves ${formatRWF(23000)}`,
-    description:
-      'Roughly once a week for three months. This is the pack for people who have already decided that stopping regularly is worth paying for in advance.',
-    includes: [
-      '10 sessions of 30 minutes, used whenever you like',
-      'Balance tracked against your phone number',
-      'Shareable — bring whoever you want',
-      'Priority booking on evening slots',
-      'Lounge access on every visit',
-    ],
-    cta: 'Buy ten sessions',
-    featured: true,
-  },
-  {
-    id: 'ten-full',
-    name: 'Ten Full Hours',
-    price: formatRWF(212000),
-    priceNumber: 212000,
-    perSession: `${formatRWF(21200)} a session`,
-    perSessionNumber: 21200,
-    sessionMinutes: 60,
-    extras: ['Priority booking on evening slots', 'A named locker held for your visits'],
-    sessions: '10 × 60-minute sessions',
-    validity: 'Valid for 3 months',
-    saving: `Saves ${formatRWF(38000)}`,
-    description:
-      'The full hour, ten times over. For people who have discovered that thirty minutes ends exactly when they were beginning to switch off.',
-    includes: [
-      '10 sessions of 60 minutes, used whenever you like',
-      'Balance tracked against your phone number',
-      'Shareable — bring whoever you want',
-      'Priority booking on evening slots',
-      'Named locker held for your visits',
-    ],
-    cta: 'Buy ten hours',
-    featured: false,
-  },
 ]
 
 export const GIFT_VOUCHER = {

@@ -4,8 +4,8 @@ import Figure from "@/components/Figure"
 import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
 import { Check } from "@/components/icons"
-import { HYGIENE_PROTOCOL, SHELF, SPACE_FAQS } from "@/data/site"
 import { IMAGES } from "@/data/images"
+import { getFaqs, getHygieneProtocol, getShelf } from "@/server/db/content"
 import { pageMetadata } from "@/lib/metadata"
 
 export const metadata = pageMetadata({
@@ -21,7 +21,12 @@ const LOUNGE = [
   "No time limit after your session",
 ]
 
-export default function SpacePage() {
+export default async function SpacePage() {
+  const [shelf, hygieneProtocol, spaceFaqs] = await Promise.all([
+    getShelf(),
+    getHygieneProtocol(),
+    getFaqs("space"),
+  ])
   return (
     <main id="main-content">
       <PageHeader
@@ -63,10 +68,10 @@ export default function SpacePage() {
             <h2 className="h2" id="shelf-title">
               This month&apos;s shelf.
             </h2>
-            <p className="body">{SHELF.note}</p>
+            <p className="body">{shelf.note}</p>
           </div>
           <ul className="shelf">
-            {SHELF.titles.map((book) => (
+            {shelf.titles.map((book) => (
               <li key={book.title}>
                 <span className="h4">{book.title}</span>
                 <span className="shelf__author">{book.author}</span>
@@ -98,7 +103,7 @@ export default function SpacePage() {
           </div>
         </div>
         <ul className="protocol__list">
-          {HYGIENE_PROTOCOL.map((item) => (
+          {hygieneProtocol.map((item) => (
             <li key={item.label}>
               <h3 className="h4">{item.label}</h3>
               <p className="small">{item.detail}</p>
@@ -122,7 +127,7 @@ export default function SpacePage() {
       </section>
 
       <div className="wrap sec">
-        <Faq name="space-faq" items={SPACE_FAQS} title="Phones, laptops and parking.">
+        <Faq name="space-faq" items={spaceFaqs} title="Phones, laptops and parking.">
           <Link className="tlink" href="/contact">
             Ask the desk something else
           </Link>

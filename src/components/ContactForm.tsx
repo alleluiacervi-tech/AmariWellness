@@ -10,9 +10,8 @@
 import { useState, type FormEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import { Mail } from "@/components/icons"
-import { SITE_CONFIG } from "@/data/site"
-import { PACKS } from "@/data/packs"
 import { formatRWF } from "@/data/sessions"
+import type { SessionPack, SiteConfig } from "@/server/db/content"
 
 const SUBJECTS = {
   booking: "A booking question",
@@ -23,9 +22,9 @@ const SUBJECTS = {
 } as const
 type SubjectKey = keyof typeof SUBJECTS
 
-function draftFor(subject: SubjectKey, params: URLSearchParams | null) {
+function draftFor(subject: SubjectKey, params: URLSearchParams | null, packs: SessionPack[]) {
   if (subject === "pack") {
-    const pack = PACKS.find((p) => p.id === params?.get("pack"))
+    const pack = packs.find((p) => p.id === params?.get("pack"))
     return pack ? `I'd like to buy the ${pack.name} pack (${pack.price}).` : ""
   }
   if (subject === "voucher") {
@@ -40,16 +39,19 @@ function draftFor(subject: SubjectKey, params: URLSearchParams | null) {
 }
 
 export function ContactForm({
+  contact,
+  packs = [],
   initialSubject = "booking",
   initialMessage = "",
 }: {
+  contact: SiteConfig["contact"]
+  packs?: SessionPack[]
   initialSubject?: SubjectKey
   initialMessage?: string
 }) {
   const [subject, setSubject] = useState<SubjectKey>(initialSubject)
   const [message, setMessage] = useState(initialMessage)
   const [sentVia, setSentVia] = useState<"whatsapp" | "email" | null>(null)
-  const { contact } = SITE_CONFIG
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -64,12 +66,12 @@ export function ContactForm({
     const text = `${SUBJECTS[subject]}\n\n${message.trim()}\n\n— ${name}${reply ? ` (${reply})` : ""}`
 
     if (via === "email") {
-      window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(
+      window.location.href = `mailto:${contact.email ?? ""}?subject=${encodeURIComponent(
         `${SUBJECTS[subject]} — ${name}`,
       )}&body=${encodeURIComponent(text)}`
     } else {
       window.open(
-        `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(text)}`,
+        `https://wa.me/${contact.whatsapp ?? ""}?text=${encodeURIComponent(text)}`,
         "_blank",
         "noopener,noreferrer",
       )
@@ -97,7 +99,7 @@ export function ContactForm({
             onChange={(e) => {
               const next = e.target.value as SubjectKey
               setSubject(next)
-              if (!message.trim()) setMessage(draftFor(next, null))
+              if (!message.trim()) setMessage(draftFor(next, null, packs))
             }}
           >
             {Object.entries(SUBJECTS).map(([key, label]) => (
@@ -164,7 +166,13 @@ export function ContactForm({
 }
 
 /** Reads the preset from the URL. Render inside <Suspense> with <ContactForm /> as the fallback. */
-export default function ContactFormFromParams() {
+export default function ContactFormFromParams({
+  contact,
+  packs = [],
+}: {
+  contact: SiteConfig["contact"]
+  packs?: SessionPack[]
+}) {
   const params = useSearchParams()
   const key = params.get("subject")
   const subject: SubjectKey =
@@ -172,8 +180,10 @@ export default function ContactFormFromParams() {
   return (
     <ContactForm
       key={params.toString()}
+      contact={contact}
+      packs={packs}
       initialSubject={subject}
-      initialMessage={draftFor(subject, params)}
+      initialMessage={draftFor(subject, params, packs)}
     />
   )
 }

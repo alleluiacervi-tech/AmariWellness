@@ -5,9 +5,15 @@ import PaymentMethods from "@/components/PaymentMethods"
 import OpenStatus from "@/components/OpenStatus"
 import Hours from "@/components/Hours"
 import Link from "@/components/Link"
-import { SITE_CONFIG } from "@/data/site"
+import { Instagram, WhatsApp } from "@/components/icons"
+import type { SiteConfig, SocialLink } from "@/server/db/content"
 
 const LOGO = "/amari-horizontal.svg"
+
+const SOCIAL_ICONS: Record<string, typeof WhatsApp> = {
+  whatsapp: WhatsApp,
+  instagram: Instagram,
+}
 
 const COLUMNS = [
   {
@@ -39,8 +45,14 @@ const COLUMNS = [
   },
 ]
 
-export default function Footer() {
-  const { address, contact } = SITE_CONFIG
+export default function Footer({
+  siteConfig,
+  socialLinks,
+}: {
+  siteConfig: SiteConfig
+  socialLinks: SocialLink[]
+}) {
+  const { name, tagline, address, contact, hours } = siteConfig
   const pathname = usePathname()
   const year = new Date().getFullYear()
 
@@ -53,21 +65,25 @@ export default function Footer() {
         <div className="wrap">
           <div className="footer__base">
             <span>
-              &copy; {year} {SITE_CONFIG.name}, Kigali
+              &copy; {year} {name}, Kigali
             </span>
             <span>
               Questions?{" "}
-              <a
-                href={`https://wa.me/${contact.whatsapp}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                WhatsApp the desk
-              </a>{" "}
-              or call{" "}
-              <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>
-                {contact.phone}
-              </a>
+              {contact.whatsapp && (
+                <>
+                  <a
+                    href={`https://wa.me/${contact.whatsapp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    WhatsApp the desk
+                  </a>{" "}
+                  or call{" "}
+                </>
+              )}
+              {contact.phone && (
+                <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`}>{contact.phone}</a>
+              )}
             </span>
           </div>
         </div>
@@ -83,18 +99,33 @@ export default function Footer() {
             <img
               className="footer__lockup"
               src={LOGO}
-              alt={SITE_CONFIG.name}
+              alt={name}
               width={164}
               height={66}
             />
-            <p className="footer__tagline">{SITE_CONFIG.tagline}</p>
+            <p className="footer__tagline">{tagline}</p>
             <address className="footer__address">
               {address.street}, {address.neighborhood}
               <br />
               {address.city}, {address.country}
             </address>
-            <Hours />
-            <OpenStatus />
+            <Hours schedule={hours.schedule} />
+            <OpenStatus schedule={hours.schedule} />
+            {socialLinks.length > 0 && (
+              <ul className="footer__social" aria-label="Follow us">
+                {socialLinks.map((link) => {
+                  const Icon = SOCIAL_ICONS[link.platform]
+                  return (
+                    <li key={link.platform}>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer">
+                        {Icon && <Icon />}
+                        {link.label}
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </div>
 
           {COLUMNS.map(({ heading, links }) => (
@@ -119,7 +150,7 @@ export default function Footer() {
         </div>
         <div className="footer__base">
           <span>
-            &copy; {year} {SITE_CONFIG.name}, Kigali. All rights reserved.
+            &copy; {year} {name}, Kigali. All rights reserved.
           </span>
           <span>A place to stop.</span>
         </div>

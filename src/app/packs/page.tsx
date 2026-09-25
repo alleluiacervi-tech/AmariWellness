@@ -3,9 +3,9 @@ import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
 import SectionHead from "@/components/SectionHead"
 import { Check } from "@/components/icons"
-import { CORPORATE, GIFT_VOUCHER, PACK_BASICS, PACKS } from "@/data/packs"
+import { CORPORATE, GIFT_VOUCHER, PACK_BASICS } from "@/data/packs"
 import { formatRWF } from "@/data/sessions"
-import { PACK_FAQS } from "@/data/site"
+import { getFaqs, getPackProducts } from "@/server/db/content"
 import { pageMetadata } from "@/lib/metadata"
 
 export const metadata = pageMetadata({
@@ -15,7 +15,8 @@ export const metadata = pageMetadata({
   path: "/packs",
 })
 
-export default function PacksPage() {
+export default async function PacksPage() {
+  const [packs, packFaqs] = await Promise.all([getPackProducts(), getFaqs("packs")])
   return (
     <main id="main-content">
       <PageHeader
@@ -38,7 +39,7 @@ export default function PacksPage() {
           ))}
         </ul>
         <ol className="rows">
-          {PACKS.map((p) => (
+          {packs.map((p) => (
             <li className="row" key={p.id} aria-labelledby={`pack-${p.id}`}>
               <span className="row__lead">
                 <span className="row__count">{p.sessions.split(" ")[0]}</span>×{" "}
@@ -120,7 +121,7 @@ export default function PacksPage() {
       </section>
 
       <div className="wrap sec">
-        <Faq name="packs-faq" items={PACK_FAQS} title="How packs work.">
+        <Faq name="packs-faq" items={packFaqs} title="How packs work.">
           <Link className="tlink" href="/sessions">
             Compare single sessions
           </Link>

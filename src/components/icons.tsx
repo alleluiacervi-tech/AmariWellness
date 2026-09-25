@@ -129,3 +129,24 @@ export function Phone({ className = "icon", ...props }: IconProps) {
     </svg>
   )
 }
+
+/** A speech bubble with a handset — the footer's WhatsApp link. */
+export function WhatsApp({ className = "icon", ...props }: IconProps) {
+  return (
+    <svg {...base} className={className} {...props}>
+      <path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.3A8.5 8.5 0 1 1 20.5 12Z" />
+      <path d="M9 10.3c.2 2.4 2.3 4.5 4.7 4.7.9.1 1-.3.9-1l-.2-1-1.4-.3-.7.7a5 5 0 0 1-2.7-2.7l.7-.7-.3-1.4-1-.2c-.7-.1-1.1 0-1 .9Z" />
+    </svg>
+  )
+}
+
+/** A rounded frame with a lens — a generic, recognisable stand-in for Instagram, drawn in the site's own line style rather than the brand mark. */
+export function Instagram({ className = "icon", ...props }: IconProps) {
+  return (
+    <svg {...base} className={className} {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="16.2" cy="7.8" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
