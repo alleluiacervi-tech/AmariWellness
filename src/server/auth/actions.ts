@@ -15,7 +15,7 @@ import QRCode from "qrcode"
 import { eq } from "drizzle-orm"
 import { db } from "../db/client"
 import { staffUsers } from "../db/schema"
-import { hashPassword, verifyPassword } from "./password"
+import { verifyPassword } from "./password"
 import { generateTotpSecret, totpProvisioningUri, verifyTotp } from "./totp"
 import {
   clearPendingEnrollment,
@@ -28,6 +28,7 @@ import {
 import { getSessionState } from "./dal"
 import { recordActivity } from "./activity"
 import { clearFailedAttempts, lockoutMessage, registerFailedAttempt } from "./lockout"
+import { changeOwnPassword, PasswordError } from "./staffPassword"
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -136,4 +137,51 @@ export async function logoutAction(): Promise<void> {
   }
   await destroyCurrentStaffSession()
   redirect("/staff/login")
+}
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Enter your current password."),
+  newPassword: z.string(),
+  confirmPassword: z.string(),
+})
+
+export type ChangePasswordState = { error?: string; ok?: boolean; otherSessionsEnded?: number }
+
+/**
+ * A signed-in staff member choosing their own password — including the
+ * first time, when sign-in sent them here because they were still on the
+ * one the seed script set. Every other session for the account ends; this
+ * one stays signed in. The password itself is never logged.
+ */
+export async function changePasswordAction(_prevState: ChangePasswordState, formData: FormData): Promise<ChangePasswordState> {
+  const state = await getSessionState()
+  if (state.status !== "authenticated") redirect("/staff/login")
+
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  })
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Fill in all three fields." }
+  const { currentPassword, newPassword, confirmPassword } = parsed.data
+  if (newPassword !== confirmPassword) return { error: "The two new passwords don't match." }
+
+  let result: { sessionsEnded: number }
+  try {
+    result = await changeOwnPassword(db, { staffUserId: state.staff.id, currentPassword, newPassword, keepSessionId: state.sessionId })
+  } catch (err) {
+    if (err instanceof PasswordError) return { error: err.message }
+    throw err
+  }
+
+  await recordActivity({
+    staffUserId: state.staff.id,
+    action: "staff.passwordChanged",
+    entityType: "staff_user",
+    entityId: state.staff.id,
+    after: { otherSessionsEnded: result.sessionsEnded },
+  })
+  // Sent here at sign-in: carry on into the workspace.
+  if (state.staff.mustChangePassword) redirect("/staff")
+  return { ok: true, otherSessionsEnded: result.sessionsEnded }
 }

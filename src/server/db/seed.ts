@@ -27,6 +27,7 @@ import {
   suites,
 } from "./schema"
 import { hashPassword } from "../auth/password"
+import { passwordProblem, SEED_DEFAULT_PASSWORD } from "../auth/staffPassword"
 
 // A standalone connection, not the app's `./client` — that module is
 // guarded with `server-only`, which only resolves inside Next's
@@ -503,18 +504,37 @@ const STAFF_SEED = [
 ]
 
 async function seedStaff() {
-  // Local development only. A real password must be set (and 2FA
-  // enrolled) before any of these accounts touch production data — see
-  // Phase 0/1 checklist in CLAUDE.md.
-  const devPassword = process.env.SEED_STAFF_PASSWORD ?? "change-me-now"
-  const passwordHash = await hashPassword(devPassword)
+  // The built-in password is written in this public repository, so it's
+  // only used against a database on this machine. Anywhere else,
+  // SEED_STAFF_PASSWORD has to be given, and it's never printed. Either
+  // way every account is created with `passwordChangedAt` null, so each
+  // person is asked to choose their own password at first sign-in.
+  const isLocal = /@(localhost|127\.0\.0\.1)(:\d+)?\//.test(connectionString!)
+  const chosen = process.env.SEED_STAFF_PASSWORD
+  if (!chosen && !isLocal) {
+    console.log(
+      "  staff users: skipped. SEED_STAFF_PASSWORD isn't set, and the built-in one is public. Set it (12+ characters) and run again.",
+    )
+    return
+  }
+  const password = chosen ?? SEED_DEFAULT_PASSWORD
+  if (chosen) {
+    const problem = passwordProblem(chosen)
+    if (problem) throw new Error(`SEED_STAFF_PASSWORD: ${problem}`)
+  }
+  const passwordHash = await hashPassword(password)
 
+  let created = 0
   for (const staff of STAFF_SEED) {
     const existing = await db.query.staffUsers.findFirst({ where: eq(staffUsers.email, staff.email) })
     if (existing) continue
     await db.insert(staffUsers).values({ ...staff, passwordHash })
+    created++
   }
-  console.log(`  staff users: ${STAFF_SEED.length} (dev password: "${devPassword}")`)
+  console.log(
+    `  staff users: ${created} created, ${STAFF_SEED.length - created} already there` +
+      (created === 0 ? "" : chosen ? " (password from SEED_STAFF_PASSWORD)" : ` (local dev password: "${password}")`),
+  )
 }
 
 async function main() {

@@ -50,11 +50,16 @@ export default async function StaffHomePage() {
               Signed in as {staff.email} · <span className="tag">{ROLE_LABELS[staff.role]}</span>
             </p>
           </div>
-          <form action={logoutAction}>
-            <button className="btn btn--outline" type="submit">
-              Sign out
-            </button>
-          </form>
+          <div className="cluster">
+            <Link className="tlink" href="/staff/password">
+              Change password
+            </Link>
+            <form action={logoutAction}>
+              <button className="btn btn--outline" type="submit">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="stack--tight">

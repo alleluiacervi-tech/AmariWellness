@@ -44,7 +44,7 @@ export default function Footer() {
   const pathname = usePathname()
   const year = new Date().getFullYear()
 
-  if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/staff")) return null
+  if (pathname.startsWith("/staff")) return null
 
   /* Mid-booking, the footer steps back to a single line of help. */
   if (pathname.startsWith("/book")) {

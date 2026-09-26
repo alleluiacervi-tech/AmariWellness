@@ -60,6 +60,12 @@ export const staffUsers = pgTable("staff_users", {
   /** Reset to 0 on a successful login; a lockout (see `lockedUntil`) is applied well before this could be brute-forced. */
   failedAttempts: integer("failed_attempts").notNull().default(0),
   lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  /**
+   * When this person last chose their own password. Null means they're
+   * still on one somebody else set (the seed script's), so sign-in sends
+   * them to choose their own before anything else (`auth/dal.ts`).
+   */
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
