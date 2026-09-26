@@ -74,7 +74,8 @@ export default function FloorSuiteRow({
             </button>
           </form>
         )}
-        {canSetStatus && (suite.status === "cleaning" || suite.status === "ready") && (
+        {/* An occupied suite with nobody checked in (their booking was cancelled mid-session) can be sent for cleaning too. */}
+        {canSetStatus && (suite.status === "cleaning" || suite.status === "ready" || (suite.status === "occupied" && !suite.current)) && (
           <form action={statusAction}>
             <input type="hidden" name="suiteId" value={suite.id} />
             <input type="hidden" name="status" value={suite.status === "cleaning" ? "ready" : "cleaning"} />

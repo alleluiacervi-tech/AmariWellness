@@ -75,6 +75,8 @@ export async function sendBookingMessage(
     mapsUrl: location.mapsUrl,
     accountUrl: `${deps.siteUrl.replace(/\/$/, "")}/account`,
     cancellationWindowHours: location.cancellationWindowHours,
+    changeableOnline: booking.source === "online",
+    whatsappUrl: location.whatsapp ? `https://wa.me/${location.whatsapp}` : null,
     refundedRwf: extra.refundedRwf,
     lateCancellation: extra.lateCancellation,
     now: extra.now,

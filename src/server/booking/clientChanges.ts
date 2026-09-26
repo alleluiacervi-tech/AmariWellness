@@ -6,7 +6,9 @@ import { and, eq } from "drizzle-orm"
 import type { Database } from "../db/client"
 import { bookings } from "../db/schema"
 import { pickAvailableSuite, suiteHasConflict } from "../availability/conflicts"
-import { SlotTakenError } from "../availability/createHold"
+import { isOverlapError, SlotTakenError } from "../availability/createHold"
+import { expireSuiteStaleHolds } from "../availability/expireStaleHolds"
+import { REMINDER_24H_MINUTES, REMINDER_2H_MINUTES } from "../jobs/policy"
 import { netKeptForBooking, refundInTransaction } from "../ledger/refund"
 
 export class BookingChangeError extends Error {}
@@ -96,22 +98,29 @@ export async function cancelByClient(db: Database, input: OwnedBookingInput): Pr
 
 /**
  * A client moving their own booking to another time, free of charge,
- * while it's still in the free window. The new slot keeps the price
- * already paid, so it may not cost more at today's prices than that
- * (moving a quiet-hours booking into peak hours would otherwise be a way
- * round the quiet-hours price); cancelling and rebooking is always open
- * instead. It stays in the same suite when that suite is free, and the
- * `bookings_no_overlap` exclusion constraint has the final word on a
- * race, exactly as for a new booking. Both reminders are re-armed for
- * the new time; the QR code is unchanged.
+ * while it's still in the free window. The caller has already checked
+ * that the new time is one the location actually offers (`getDaySlots`,
+ * with this booking excluded); the rules here are about this booking:
+ *
+ * - The price already paid stays as it is. A booking made at the
+ *   quiet-hours price can only move to another quiet-hours time, so
+ *   moving isn't a way round peak pricing; any other booking can move to
+ *   any time. Cancelling (free) and rebooking is always open instead.
+ * - The new time must itself be outside the free-cancellation window,
+ *   so a move never lands a booking where it could no longer be changed.
+ * - It stays in the same suite when that suite is free. Expired payment
+ *   holds on the target suite are cleared first, as `createHold` does,
+ *   and the `bookings_no_overlap` exclusion constraint has the final
+ *   word on a race, exactly as for a new booking.
+ * - A reminder whose window the new time already falls inside is marked
+ *   as sent: the "your session has moved" message, with its QR, has just
+ *   told them. The QR code itself is unchanged.
  */
 export async function rescheduleByClient(
   db: Database,
-  input: OwnedBookingInput & { newStartAt: Date; newEndAt: Date; newSlotPriceRwf: number },
+  input: OwnedBookingInput & { newStartAt: Date; newEndAt: Date; newSlotOffPeak: boolean },
 ) {
   const now = input.now ?? new Date()
-  if (input.newStartAt <= now) throw new BookingChangeError("Choose a time that hasn't started yet.")
-
   try {
     return await db.transaction(async (tx) => {
       const [booking] = await tx
@@ -127,9 +136,12 @@ export async function rescheduleByClient(
         throw new BookingChangeError(`A booking can only be moved up to ${input.cancellationWindowHours} hours before it starts.`)
       }
       if (booking.startAt.getTime() === input.newStartAt.getTime()) throw new BookingChangeError("That's the time you already have.")
-      if (input.newSlotPriceRwf > booking.priceAtBookingRwf) {
+      if (input.newStartAt.getTime() < now.getTime() + input.cancellationWindowHours * 60 * 60 * 1000) {
+        throw new BookingChangeError(`Choose a time at least ${input.cancellationWindowHours} hours from now.`)
+      }
+      if (booking.offPeak && !input.newSlotOffPeak) {
         throw new BookingChangeError(
-          "That time costs more than you paid. Cancel this booking (free of charge) and book the new time instead.",
+          "This booking has the quiet-hours price, so it can move to another quiet-hours time. For a later time, cancel it (free of charge) and book again.",
         )
       }
 
@@ -137,15 +149,18 @@ export async function rescheduleByClient(
         ? await pickAvailableSuite(tx, booking.locationId, input.newStartAt, input.newEndAt, booking.id)
         : booking.suiteId
       if (!suiteId) throw new SlotTakenError()
+      await expireSuiteStaleHolds(tx, suiteId, now)
 
+      const untilStart = input.newStartAt.getTime() - now.getTime()
       const [moved] = await tx
         .update(bookings)
         .set({
           startAt: input.newStartAt,
           endAt: input.newEndAt,
           suiteId,
-          reminder24hSentAt: null,
-          reminder2hSentAt: null,
+          offPeak: input.newSlotOffPeak,
+          reminder24hSentAt: untilStart <= REMINDER_24H_MINUTES * 60_000 ? now : null,
+          reminder2hSentAt: untilStart <= REMINDER_2H_MINUTES * 60_000 ? now : null,
           updatedAt: now,
         })
         .where(and(eq(bookings.id, booking.id), eq(bookings.status, "confirmed")))
@@ -153,8 +168,7 @@ export async function rescheduleByClient(
       return { before: booking, after: moved }
     })
   } catch (err) {
-    const message = err instanceof Error ? ((err.cause as Error | undefined)?.message ?? err.message) : String(err)
-    if (message.includes("bookings_no_overlap")) throw new SlotTakenError()
+    if (isOverlapError(err)) throw new SlotTakenError()
     throw err
   }
 }

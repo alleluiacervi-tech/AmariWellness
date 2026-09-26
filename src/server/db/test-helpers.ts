@@ -73,6 +73,18 @@ export async function closeTestDatabase() {
 }
 
 /**
+ * A second, separate pool with several connections. `testDb` has one
+ * connection, so two transactions started with `Promise.all` on it simply
+ * queue behind each other; a test that needs them genuinely concurrent —
+ * to prove a row lock or a conditional update decides a race — runs them
+ * on this instead. Close it at the end of the test.
+ */
+export function concurrentTestDb(max = 4) {
+  const pool = postgres(connectionString!, { max })
+  return { db: drizzle(pool, { schema }), close: () => pool.end() }
+}
+
+/**
  * Drizzle's postgres-js driver wraps a failed query in its own Error
  * ("Failed query: insert into ...") and puts the actual Postgres error
  * — the one naming the violated constraint — on `.cause`. Assert

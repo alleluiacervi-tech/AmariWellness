@@ -22,6 +22,16 @@ export type BookingMessageContext = {
   mapsUrl: string | null
   accountUrl: string
   cancellationWindowHours: number
+  /**
+   * Whether the client can change this booking themselves from their
+   * account — true for an online booking. One made at reception is
+   * changed there (`changePolicy`'s "desk" case), so its messages point
+   * to the desk instead of promising an online change that would be
+   * refused.
+   */
+  changeableOnline: boolean
+  /** The location's WhatsApp link, for a booking that's changed by contacting the desk. */
+  whatsappUrl: string | null
   /** booking_cancelled only: what was refunded, if anything. */
   refundedRwf?: number | null
   /** booking_cancelled only: the client cancelled inside the free-cancellation window, so the session is forfeited under the policy. */
@@ -34,7 +44,7 @@ export type RenderedMessage = {
   subject: string
   text: string
   html: string
-  /** Whether the QR image belongs with this message — the confirmation, a reschedule and the 2-hour reminder, which is the one most likely open at the door. */
+  /** Whether the QR image belongs with this message — see `QR_TEMPLATES`. */
   includesQr: boolean
 }
 
@@ -62,8 +72,14 @@ function footerLines(ctx: BookingMessageContext): string[] {
 }
 
 function changePolicyLine(ctx: BookingMessageContext) {
-  return `Need to change it? Cancel or move your session free of charge up to ${ctx.cancellationWindowHours} hours before: ${ctx.accountUrl}`
+  if (ctx.changeableOnline) {
+    return `Need to change it? Cancel or move your session free of charge up to ${ctx.cancellationWindowHours} hours before: ${ctx.accountUrl}`
+  }
+  return `Need to change it? Contact us up to ${ctx.cancellationWindowHours} hours before${ctx.whatsappUrl ? `: ${ctx.whatsappUrl}` : ", or ask at reception."}`
 }
+
+/** The messages that carry the QR image: the confirmation, a move, and the 2-hour reminder, which is the one most likely open at the door. */
+export const QR_TEMPLATES: readonly NotificationTemplate[] = ["booking_confirmed", "booking_rescheduled", "reminder_2h"]
 
 const QR_LINE = "Show the QR code in this message at reception. It works once, on the day of your session."
 
@@ -80,6 +96,7 @@ function compose(subject: string, paragraphs: string[][], includesQr: boolean): 
 
 export function renderBookingMessage(template: NotificationTemplate, ctx: BookingMessageContext): RenderedMessage {
   const hello = [`Hello ${firstName(ctx.clientName)},`]
+  const qr = QR_TEMPLATES.includes(template)
   const shortWhen = `${formatKigaliDay(ctx.startAt)}, ${formatKigaliTime(ctx.startAt)}`
 
   switch (template) {
@@ -87,13 +104,13 @@ export function renderBookingMessage(template: NotificationTemplate, ctx: Bookin
       return compose(
         `Your Amari session is booked: ${shortWhen}`,
         [hello, ["Your session is booked.", ...detailLines(ctx, true)], [QR_LINE], [changePolicyLine(ctx)], footerLines(ctx)],
-        true,
+        qr,
       )
     case "booking_rescheduled":
       return compose(
         `Your Amari session has moved: ${shortWhen}`,
         [hello, ["Your session has moved to a new time.", ...detailLines(ctx, false)], [QR_LINE], [changePolicyLine(ctx)], footerLines(ctx)],
-        true,
+        qr,
       )
     case "reminder_24h": {
       const day = isKigaliTomorrow(ctx.startAt, ctx.now ?? new Date()) ? "tomorrow" : "today"
@@ -106,7 +123,7 @@ export function renderBookingMessage(template: NotificationTemplate, ctx: Bookin
           [changePolicyLine(ctx)],
           footerLines(ctx),
         ],
-        false,
+        qr,
       )
     }
     case "reminder_2h":
@@ -119,7 +136,7 @@ export function renderBookingMessage(template: NotificationTemplate, ctx: Bookin
           ["Arrive a few minutes early to settle in."],
           footerLines(ctx),
         ],
-        true,
+        qr,
       )
     case "booking_cancelled": {
       const outcome = ctx.refundedRwf
@@ -130,7 +147,7 @@ export function renderBookingMessage(template: NotificationTemplate, ctx: Bookin
       return compose(
         `Your Amari session is cancelled: ${shortWhen}`,
         [hello, ["Your session is cancelled.", ...detailLines(ctx, false)], [outcome], [`Book again any time: ${ctx.accountUrl.replace(/\/account$/, "/book")}`], footerLines(ctx)],
-        false,
+        qr,
       )
     }
   }

@@ -15,6 +15,7 @@ import {
 } from "../db/schema"
 import { getLocation } from "../db/content"
 import { kigaliWallTimeToUtc } from "./slots"
+import { QR_TEMPLATES } from "../notify/templates"
 
 export type StaffBookingRow = {
   id: string
@@ -29,8 +30,17 @@ export type StaffBookingRow = {
   paymentStatus: string | null
   paymentMethod: PaymentMethod | null
   paymentAmountRwf: number | null
-  /** The latest message sent about this booking on each channel — so the desk can see who didn't get their QR. */
+  /** The latest message sent about this booking on each channel. */
   lastMessages: { channel: NotificationChannel; template: NotificationTemplate; status: "sent" | "failed" }[]
+  /**
+   * Whether the client has their QR: true once any message carrying it
+   * (`QR_TEMPLATES`) went through on any channel — the code never changes,
+   * so an earlier one still works — false if every such attempt failed,
+   * null if none was attempted (no phone or email). Kept apart from
+   * `lastMessages` so a later reminder that went through can't hide a
+   * confirmation that didn't.
+   */
+  qrDelivered: boolean | null
 }
 
 /**
@@ -68,7 +78,20 @@ export async function getBookingsForDay(dateISO: string): Promise<StaffBookingRo
   if (rows.length === 0) return []
 
   const bookingIds = rows.map((r) => r.id)
-  const paymentRows = await db.select().from(payments).where(inArray(payments.bookingId, bookingIds))
+  const [paymentRows, messageRows] = await Promise.all([
+    db.select().from(payments).where(inArray(payments.bookingId, bookingIds)),
+    db
+      .select({
+        bookingId: notifications.bookingId,
+        channel: notifications.channel,
+        template: notifications.template,
+        status: notifications.status,
+      })
+      .from(notifications)
+      .where(inArray(notifications.bookingId, bookingIds))
+      .orderBy(asc(notifications.createdAt)),
+  ])
+
   const paymentByBooking = new Map<string, (typeof paymentRows)[number]>()
   for (const payment of paymentRows) {
     if (!payment.bookingId) continue
@@ -78,23 +101,17 @@ export async function getBookingsForDay(dateISO: string): Promise<StaffBookingRo
     if (isBetter) paymentByBooking.set(payment.bookingId, payment)
   }
 
-  const messageRows = await db
-    .select({
-      bookingId: notifications.bookingId,
-      channel: notifications.channel,
-      template: notifications.template,
-      status: notifications.status,
-    })
-    .from(notifications)
-    .where(inArray(notifications.bookingId, bookingIds))
-    .orderBy(asc(notifications.createdAt))
   // Ordered oldest first, so the last write per booking+channel wins.
   const lastMessages = new Map<string, Map<NotificationChannel, StaffBookingRow["lastMessages"][number]>>()
+  const qrDelivered = new Map<string, boolean>()
   for (const m of messageRows) {
     if (!m.bookingId) continue
     const byChannel = lastMessages.get(m.bookingId) ?? new Map()
     byChannel.set(m.channel, { channel: m.channel, template: m.template, status: m.status })
     lastMessages.set(m.bookingId, byChannel)
+    if (QR_TEMPLATES.includes(m.template)) {
+      qrDelivered.set(m.bookingId, (qrDelivered.get(m.bookingId) ?? false) || m.status === "sent")
+    }
   }
 
   return rows.map((row) => {
@@ -105,6 +122,7 @@ export async function getBookingsForDay(dateISO: string): Promise<StaffBookingRo
       paymentMethod: payment?.method ?? null,
       paymentAmountRwf: payment?.amountRwf ?? null,
       lastMessages: [...(lastMessages.get(row.id)?.values() ?? [])],
+      qrDelivered: qrDelivered.get(row.id) ?? null,
     }
   })
 }

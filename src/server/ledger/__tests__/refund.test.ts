@@ -1,13 +1,16 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { and, eq } from "drizzle-orm"
-import { closeTestDatabase, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
-import { bookings, ledgerEntries, payments } from "../../db/schema"
+import { closeTestDatabase, concurrentTestDb, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
+import { bookings, ledgerEntries, payments, suites } from "../../db/schema"
 import { RefundError, netKeptForBooking, refundBooking } from "../refund"
 import { applyDiscount } from "../discount"
 
 const STAFF_ID = "00000000-0000-4000-8000-000000000099"
 
-async function confirmedBookingWithPayment(amountRwf = 15000) {
+async function confirmedBookingWithPayment(
+  amountRwf = 15000,
+  status: "confirmed" | "checked_in" | "completed" = "confirmed",
+) {
   const { location, suite, sessionType, client } = await seedMinimalCatalog()
   const [booking] = await testDb
     .insert(bookings)
@@ -18,7 +21,7 @@ async function confirmedBookingWithPayment(amountRwf = 15000) {
       clientId: client.id,
       startAt: new Date("2027-01-10T10:00:00Z"),
       endAt: new Date("2027-01-10T10:45:00Z"),
-      status: "confirmed",
+      status,
       priceAtBookingRwf: amountRwf,
     })
     .returning()
@@ -44,7 +47,7 @@ async function confirmedBookingWithPayment(amountRwf = 15000) {
     paymentId: payment.id,
     clientId: client.id,
   })
-  return { location, client, booking, payment }
+  return { location, suite, client, booking, payment }
 }
 
 describe("refundBooking", () => {
@@ -132,5 +135,44 @@ describe("refundBooking", () => {
     ).rejects.toThrow(/12,000 RWF after discounts/)
     await refundBooking(testDb, { bookingId: booking.id, amountRwf: 12000, reason: "Refund the rest", staffUserId: STAFF_ID })
     expect(await netKeptForBooking(testDb, booking.id)).toBe(0)
+  })
+
+  it("pays out only once when two refunds of the same booking land at the same moment", async () => {
+    const { booking } = await confirmedBookingWithPayment(15000)
+    const concurrent = concurrentTestDb()
+    try {
+      const results = await Promise.allSettled([
+        refundBooking(concurrent.db, { bookingId: booking.id, amountRwf: 15000, reason: "Desk, tab one", staffUserId: STAFF_ID }),
+        refundBooking(concurrent.db, { bookingId: booking.id, amountRwf: 15000, reason: "Desk, tab two", staffUserId: STAFF_ID }),
+      ])
+      expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1)
+      const rejected = results.find((r) => r.status === "rejected") as PromiseRejectedResult
+      expect(rejected.reason).toBeInstanceOf(RefundError)
+    } finally {
+      await concurrent.close()
+    }
+    const refunds = await testDb
+      .select()
+      .from(ledgerEntries)
+      .where(and(eq(ledgerEntries.bookingId, booking.id), eq(ledgerEntries.type, "refund")))
+    expect(refunds).toHaveLength(1)
+    expect(await netKeptForBooking(testDb, booking.id)).toBe(0)
+  })
+
+  it("frees the suite when a checked-in guest is refunded mid-session", async () => {
+    const { booking, suite } = await confirmedBookingWithPayment(15000, "checked_in")
+    await testDb.update(suites).set({ status: "occupied" }).where(eq(suites.id, suite.id))
+    const result = await refundBooking(testDb, { bookingId: booking.id, amountRwf: 15000, reason: "Chair failed", staffUserId: STAFF_ID })
+    expect(result.statusAfter).toBe("cancelled")
+    const [suiteAfter] = await testDb.select().from(suites).where(eq(suites.id, suite.id))
+    expect(suiteAfter.status).toBe("cleaning")
+  })
+
+  it("keeps a completed session completed when it's refunded afterwards", async () => {
+    const { booking } = await confirmedBookingWithPayment(15000, "completed")
+    const result = await refundBooking(testDb, { bookingId: booking.id, amountRwf: 5000, reason: "Goodwill", staffUserId: STAFF_ID })
+    expect(result.statusAfter).toBe("completed")
+    const [after] = await testDb.select().from(bookings).where(eq(bookings.id, booking.id))
+    expect(after.status).toBe("completed")
   })
 })

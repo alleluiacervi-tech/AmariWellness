@@ -3,6 +3,7 @@ import { requireStaffPage } from "@/server/auth/dal"
 import { can } from "@/server/auth/roles"
 import { getSessionTypes } from "@/server/db/content"
 import { getBookingsForDay } from "@/server/availability/bookingsForStaff"
+import { kigaliDateISO } from "@/lib/kigaliTime"
 import NewWalkInForm from "./NewWalkInForm"
 import BookingRow from "./BookingRow"
 
@@ -11,13 +12,9 @@ export const metadata = {
   robots: { index: false, follow: false },
 }
 
-function todayISO(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" })
-}
-
 export default async function StaffBookingsPage() {
   const staff = await requireStaffPage("bookings.view")
-  const date = todayISO()
+  const date = kigaliDateISO(new Date())
   const [sessions, dayBookings] = await Promise.all([getSessionTypes(), getBookingsForDay(date)])
 
   return (

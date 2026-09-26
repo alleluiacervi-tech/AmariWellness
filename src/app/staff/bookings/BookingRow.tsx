@@ -10,6 +10,7 @@ import {
 import { checkInAction, type CheckInState } from "@/server/admin/floorActions"
 import type { StaffBookingRow } from "@/server/availability/bookingsForStaff"
 import { bookingReference } from "@/lib/booking"
+import { formatKigaliTime, formatRwf } from "@/lib/kigaliTime"
 
 const initial: ActionState = {}
 
@@ -22,10 +23,6 @@ const STATUS_LABELS: Record<StaffBookingRow["status"], string> = {
   no_show: "No-show",
 }
 
-function formatTime(d: Date) {
-  return new Date(d).toLocaleTimeString("en-RW", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Kigali" })
-}
-
 const CHANNEL_LABELS = { email: "Email", whatsapp: "WhatsApp" } as const
 const TEMPLATE_LABELS = {
   booking_confirmed: "confirmation",
@@ -34,10 +31,6 @@ const TEMPLATE_LABELS = {
   reminder_24h: "24-hour reminder",
   reminder_2h: "2-hour reminder",
 } as const
-
-function formatRWF(amount: number) {
-  return `${amount.toLocaleString("en-RW")} RWF`
-}
 
 export default function BookingRow({
   booking,
@@ -58,7 +51,8 @@ export default function BookingRow({
   const [discountState, discountAction, discountPending] = useActionState(applyDiscountAction, initial)
 
   const isVoidable = booking.status !== "cancelled" && booking.status !== "completed" && booking.status !== "no_show"
-  const isRefundable = booking.status === "confirmed" && booking.paymentStatus === "succeeded"
+  // A checked-in guest can be refunded too (the chair failed mid-session); the refund frees their suite.
+  const isRefundable = (booking.status === "confirmed" || booking.status === "checked_in") && booking.paymentStatus === "succeeded"
   const isDiscountable = booking.status === "confirmed" || booking.status === "checked_in" || booking.status === "completed"
 
   return (
@@ -66,14 +60,14 @@ export default function BookingRow({
       <div className="cluster justify-between">
         <div className="stack--tight">
           <span className="h4" id={`booking-${booking.id}-title`}>
-            {formatTime(booking.startAt)} · {booking.sessionName}
+            {formatKigaliTime(new Date(booking.startAt))} · {booking.sessionName}
           </span>
           <span className="meta">
             {booking.suiteName} — {booking.clientName}
             {booking.clientPhone ? ` (${booking.clientPhone})` : ""}
           </span>
           <span className="meta font-mono">
-            {formatRWF(booking.priceAtBookingRwf)}
+            {formatRwf(booking.priceAtBookingRwf)}
             {booking.paymentStatus ? ` — payment ${booking.paymentStatus}` : ""}
           </span>
           <span className="meta font-mono">{bookingReference(booking.id)}</span>
@@ -82,6 +76,11 @@ export default function BookingRow({
               {booking.lastMessages
                 .map((m) => `${CHANNEL_LABELS[m.channel]} ${TEMPLATE_LABELS[m.template]} ${m.status === "sent" ? "sent" : "FAILED"}`)
                 .join(", ")}
+            </span>
+          )}
+          {booking.status === "confirmed" && booking.qrDelivered === false && (
+            <span className="small" style={{ color: "var(--alarm)" }}>
+              Their QR code never reached them. Check them in by name.
             </span>
           )}
         </div>
@@ -141,7 +140,12 @@ export default function BookingRow({
           {checkInState.result.message}
         </p>
       )}
-      {checkInState.result?.ok && <p className="small">Checked in to {checkInState.result.preview.suiteName}.</p>}
+      {checkInState.result?.ok && (
+        <p className="small">
+          Checked in to {checkInState.result.preview.suiteName}
+          {checkInState.result.preview.movedFromSuiteName ? ` (${checkInState.result.preview.movedFromSuiteName} is in maintenance)` : ""}.
+        </p>
+      )}
       {cancelState.error && (
         <p className="small" role="alert" style={{ color: "var(--alarm)" }}>
           {cancelState.error}

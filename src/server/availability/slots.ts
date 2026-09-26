@@ -4,7 +4,7 @@
 // reason: that module is `server-only`-guarded, so calling it here
 // would make this untestable outside Next. The real caller (the public
 // `/book` page, Phase 1.4b) fetches the location once and passes it in.
-import { and, eq, gt, inArray, isNull, lt, or } from "drizzle-orm"
+import { and, eq, gt, inArray, isNull, lt, ne, or } from "drizzle-orm"
 import type { Database } from "../db/client"
 import { bookings, holidays, maintenanceBlocks, sessionTypes, suites, type locations } from "../db/schema"
 
@@ -31,8 +31,23 @@ export function isWeekend(dateISO: string): boolean {
 
 type LocationRow = typeof locations.$inferSelect
 
-/** Every hourly slot for one day and one session type, with whether at least one suite is free for the whole span (session length + the location's turnover minutes). This is a live read — not cached across requests or calls. */
-export async function getDaySlots(db: Database, location: LocationRow, dateISO: string, sessionTypeId: string): Promise<Slot[]> {
+/**
+ * Every hourly slot for one day and one session type, with whether at
+ * least one suite is free for the whole span (session length + the
+ * location's turnover minutes). This is a live read — not cached across
+ * requests or calls. It's also the definition of a bookable time: a
+ * client's chosen time is accepted only if it's one of these slots and
+ * available, so a time outside opening hours, off the hourly grid or on
+ * a closed day can't be booked or moved to by posting it directly.
+ */
+export async function getDaySlots(
+  db: Database,
+  location: LocationRow,
+  dateISO: string,
+  sessionTypeId: string,
+  /** A booking being moved: its own current time doesn't make a slot look taken. */
+  options: { excludeBookingId?: string } = {},
+): Promise<Slot[]> {
   const [sessionType] = await db.select().from(sessionTypes).where(eq(sessionTypes.id, sessionTypeId)).limit(1)
   if (!sessionType) throw new Error("Unknown session type.")
 
@@ -80,6 +95,7 @@ export async function getDaySlots(db: Database, location: LocationRow, dateISO: 
       .where(
         and(
           inArray(bookings.suiteId, suiteIds),
+          options.excludeBookingId ? ne(bookings.id, options.excludeBookingId) : undefined,
           lt(bookings.startAt, dayEnd),
           gt(bookings.endAt, dayStart),
           or(

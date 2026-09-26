@@ -21,19 +21,28 @@ export default function CheckInPanel() {
   const [looking, startLookup] = useTransition()
 
   const [cameraOn, setCameraOn] = useState(false)
+  const [cameraStarting, setCameraStarting] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const frameRef = useRef<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  /* Bumped by every start and stop (and on leaving the page). A camera
+     start that's still waiting on the permission prompt checks it when it
+     resumes, and releases its stream if it's no longer the current one —
+     so a double tap, "Stop camera" or navigating away mid-prompt never
+     leaves a camera running with nothing showing it. */
+  const cameraSessionRef = useRef(0)
 
   function stopCamera() {
+    cameraSessionRef.current++
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
     frameRef.current = null
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
     setCameraOn(false)
+    setCameraStarting(false)
   }
 
   useEffect(() => stopCamera, [])
@@ -49,24 +58,34 @@ export default function CheckInPanel() {
   }
 
   async function startCamera() {
+    if (cameraStarting || streamRef.current) return
     setCameraError(null)
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError("This browser can't open a camera here. Use the code field instead.")
       return
     }
+    const session = ++cameraSessionRef.current
+    setCameraStarting(true)
+    let stream: MediaStream | null = null
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+      if (session !== cameraSessionRef.current) {
+        stream.getTracks().forEach((t) => t.stop())
+        return
+      }
       streamRef.current = stream
       const video = videoRef.current!
       video.srcObject = stream
       await video.play()
       const { default: jsQR } = await import("jsqr")
+      if (session !== cameraSessionRef.current) return // stopCamera already released the stream
+      setCameraStarting(false)
       setCameraOn(true)
 
       const canvas = canvasRef.current!
       const context = canvas.getContext("2d", { willReadFrequently: true })!
       const scan = () => {
-        if (!streamRef.current) return
+        if (!streamRef.current || session !== cameraSessionRef.current) return
         if (video.readyState >= video.HAVE_CURRENT_DATA && video.videoWidth > 0) {
           // Decode a downscaled frame: a QR held up to the camera is
           // large, and full-resolution frames would starve slow devices.
@@ -86,6 +105,10 @@ export default function CheckInPanel() {
       }
       frameRef.current = requestAnimationFrame(scan)
     } catch {
+      if (session !== cameraSessionRef.current) {
+        stream?.getTracks().forEach((t) => t.stop())
+        return
+      }
       stopCamera()
       setCameraError("Couldn't open the camera — check the browser's camera permission, or use the code field.")
     }
@@ -130,8 +153,8 @@ export default function CheckInPanel() {
               Stop camera
             </button>
           ) : (
-            <button className="btn btn--outline btn--sm" type="button" onClick={startCamera}>
-              Use camera
+            <button className="btn btn--outline btn--sm" type="button" onClick={cameraStarting ? stopCamera : startCamera}>
+              {cameraStarting ? "Cancel camera" : "Use camera"}
             </button>
           )}
         </div>
@@ -169,6 +192,14 @@ function LookupResult({ lookup, payload, onDone }: { lookup: CheckInLookup; payl
         <div className="stack--tight">
           <p className="label">{checkedIn ? "Checked in" : result.ok ? "Ready to check in" : "Can't check in"}</p>
           <h3 className="h2">{preview.suiteName}</h3>
+          {preview.movedFromSuiteName && (
+            <p className="body">
+              {preview.movedFromSuiteName} is in maintenance, so {checkedIn ? "they're" : "they'll be"} in {preview.suiteName} instead.
+            </p>
+          )}
+          {!checkedIn && result.ok && preview.suiteStatus === "cleaning" && (
+            <p className="meta">{preview.suiteName} is still marked as being cleaned. Check it&rsquo;s ready before showing them in.</p>
+          )}
           <p className="lead">{preview.clientName}</p>
           <p className="body">
             {preview.sessionName}, <span className="font-mono">{preview.durationMinutes} min</span> at{" "}

@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { locations } from "./locations"
 import { suites } from "./suites"
 import { sessionTypes } from "./catalog"
@@ -131,4 +131,7 @@ export const notifications = pgTable("notifications", {
   providerMessageId: text("provider_message_id"),
   error: text("error"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-})
+},
+  // The staff board reads each of today's bookings' messages on every load; a few rows per booking, forever.
+  (t) => [index("notifications_booking_id_idx").on(t.bookingId)],
+)

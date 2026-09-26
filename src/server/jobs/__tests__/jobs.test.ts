@@ -226,6 +226,24 @@ describe("runTick", () => {
     expect((await bookingById(late.id)).status).toBe("no_show")
     expect((await bookingById(upcoming.id)).reminder24hSentAt).not.toBeNull()
   })
+
+  it("still expires holds and marks no-shows when the message providers can't even be set up", async () => {
+    const catalog = await seedMinimalCatalog()
+    const start = new Date(Date.now() + 2 * 24 * HOUR)
+    const late = await confirmedAt(catalog, new Date(start.getTime() - 24 * HOUR + 30 * MIN))
+
+    const result = await runTick(
+      testDb,
+      () => {
+        throw new Error("Unknown EMAIL_PROVIDER: resend")
+      },
+      new Date(start.getTime() - 23 * HOUR),
+    )
+    expect(result.noShows).toBe(1)
+    expect(result.expiredHolds).toBe(0)
+    expect(result.errors).toEqual(["sendDueReminders: Unknown EMAIL_PROVIDER: resend"])
+    expect((await bookingById(late.id)).status).toBe("no_show")
+  })
 })
 
 describe("finishSession", () => {

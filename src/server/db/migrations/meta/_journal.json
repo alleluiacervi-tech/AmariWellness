@@ -29,6 +29,13 @@
       "when": 1790374403979,
       "tag": "0003_booking_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790408903432,
+      "tag": "0004_checkin_cutover",
+      "breakpoints": true
     }
   ]
 }

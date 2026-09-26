@@ -19,6 +19,7 @@ import { requireStaffAction } from "../auth/dal"
 import { recordActivity } from "../auth/activity"
 import { checkIn, lookupQr, type CheckInLookup } from "../checkin/checkIn"
 import { finishSession } from "../jobs/sessionLifecycle"
+import { releaseSuite } from "../checkin/suiteState"
 
 export type ActionState = { error?: string; ok?: boolean }
 
@@ -49,7 +50,12 @@ export async function checkInAction(_prev: CheckInState, formData: FormData): Pr
       entityType: "booking",
       entityId: result.preview.bookingId,
       before: { status: "confirmed" },
-      after: { status: "checked_in", suite: result.preview.suiteName, via: parsed.data.payload ? "qr" : "manual" },
+      after: {
+        status: "checked_in",
+        suite: result.preview.suiteName,
+        ...(result.preview.movedFromSuiteName ? { movedFromSuite: result.preview.movedFromSuiteName } : {}),
+        via: parsed.data.payload ? "qr" : "manual",
+      },
     })
     revalidatePath("/staff", "layout")
   }
@@ -81,31 +87,46 @@ const suiteStatusSchema = z.object({
 })
 
 /**
- * Cleaning ↔ ready, the two moves the desk makes by hand. Occupied is
- * only ever set by a check-in, and maintenance from the suites page —
- * this action refuses to touch a suite in either state, so a stray tap
- * can't mark an occupied suite "ready" under a guest.
+ * Cleaning ↔ ready, the two moves the desk makes by hand — plus
+ * "needs cleaning" for a suite still showing occupied with nobody
+ * checked in to it. Occupied is otherwise only ever set by a check-in,
+ * and maintenance from the suites page. The suite row is locked while
+ * this decides, and a check-in takes the same lock, so a tap landing at
+ * the same moment as a check-in can't mark the suite ready (or cleaning)
+ * under the guest who's just been shown in.
  */
 export async function setSuiteFloorStatusAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const staff = await requireStaffAction("suites.maintenance")
   const parsed = suiteStatusSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: "Something went wrong — refresh and try again." }
+  const target = parsed.data.status
 
-  const [before] = await db.select().from(suites).where(eq(suites.id, parsed.data.suiteId)).limit(1)
-  if (!before) return { error: "Suite not found." }
-  if (before.status !== "ready" && before.status !== "cleaning") {
-    return { error: `This suite is ${before.status === "occupied" ? "occupied" : "in maintenance"} — that has to change first.` }
-  }
-  if (before.status === parsed.data.status) return { ok: true }
+  const outcome = await db.transaction(async (tx) => {
+    const [before] = await tx.select().from(suites).where(eq(suites.id, parsed.data.suiteId)).for("update")
+    if (!before) return { error: "Suite not found." }
+    if (before.status === target) return { before, after: before.status }
+    if (before.status === "maintenance") return { error: "This suite is in maintenance — that has to change on the suites page first." }
+    if (before.status === "occupied") {
+      if (target !== "cleaning") return { error: "This suite is occupied — it needs cleaning before it's ready." }
+      // Only frees it if nobody is actually checked in there.
+      await releaseSuite(tx, before.id)
+      const [after] = await tx.select({ status: suites.status }).from(suites).where(eq(suites.id, before.id))
+      if (after.status === "occupied") return { error: "A guest is checked in to this suite. Use \"Session finished\" when they leave." }
+      return { before, after: after.status }
+    }
+    await tx.update(suites).set({ status: target }).where(eq(suites.id, before.id))
+    return { before, after: target }
+  })
+  if ("error" in outcome) return { error: outcome.error }
+  if (outcome.before.status === outcome.after) return { ok: true }
 
-  await db.update(suites).set({ status: parsed.data.status }).where(eq(suites.id, before.id))
   await recordActivity({
     staffUserId: staff.id,
     action: "suite.statusChanged",
     entityType: "suite",
-    entityId: before.id,
-    before: { status: before.status },
-    after: { status: parsed.data.status },
+    entityId: outcome.before.id,
+    before: { status: outcome.before.status },
+    after: { status: outcome.after },
   })
   revalidatePath("/staff", "layout")
   return { ok: true }

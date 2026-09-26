@@ -20,8 +20,12 @@ export type TickResult = {
  * is recorded in `errors` and the rest still run, so a broken reminder
  * provider never stops holds from expiring or no-shows from being
  * marked. Run it every few minutes — every job here is safe to repeat.
+ *
+ * `deps` may be a function, called inside the reminders job: setting up
+ * the message providers (an unknown `EMAIL_PROVIDER`, say) can itself
+ * fail, and that too must only stop the reminders.
  */
-export async function runTick(db: Database, deps: NotifyDeps, now: Date = new Date()): Promise<TickResult> {
+export async function runTick(db: Database, deps: NotifyDeps | (() => NotifyDeps), now: Date = new Date()): Promise<TickResult> {
   const result: TickResult = { errors: [] }
   const run = async (name: string, job: () => Promise<void>) => {
     try {
@@ -41,7 +45,7 @@ export async function runTick(db: Database, deps: NotifyDeps, now: Date = new Da
     result.completed = await completeFinishedSessions(db, now)
   })
   await run("sendDueReminders", async () => {
-    const reminders = await sendDueReminders(db, deps, now)
+    const reminders = await sendDueReminders(db, typeof deps === "function" ? deps() : deps, now)
     result.reminders24h = reminders.reminders24h
     result.reminders2h = reminders.reminders2h
     result.errors.push(...reminders.failures)

@@ -1,7 +1,8 @@
 // No `server-only` guard, deliberately — see reminders.ts.
 import { and, eq, inArray, lte, sql } from "drizzle-orm"
 import type { Database, Tx } from "../db/client"
-import { activityLog, bookings, sessionTypes, suites } from "../db/schema"
+import { activityLog, bookings, sessionTypes } from "../db/schema"
+import { releaseSuite } from "../checkin/suiteState"
 import { NO_SHOW_GRACE_MINUTES } from "./policy"
 
 /**
@@ -40,14 +41,10 @@ export async function markNoShows(db: Database, now: Date = new Date()): Promise
 }
 
 /**
- * Completes the given checked-in bookings and moves each one's suite
- * from occupied to cleaning — the turnover the schedule already
- * reserves. Staff mark the suite ready again from the floor board once
- * it's actually been cleaned; that step stays human.
- *
- * A suite is only moved to cleaning if nobody else is checked in to it:
- * the desk can check the next guest in a few minutes early, and their
- * suite must not flip to "cleaning" underneath them.
+ * Completes the given checked-in bookings and frees each one's suite
+ * (occupied → cleaning, via `releaseSuite`, unless the next guest is
+ * already checked in to it). Staff mark the suite ready again from the
+ * floor board once it's actually been cleaned; that step stays human.
  */
 async function completeAndFreeSuites(tx: Tx, finished: { id: string; suiteId: string }[], now: Date): Promise<string[]> {
   if (finished.length === 0) return []
@@ -57,15 +54,7 @@ async function completeAndFreeSuites(tx: Tx, finished: { id: string; suiteId: st
     .where(and(inArray(bookings.id, finished.map((f) => f.id)), eq(bookings.status, "checked_in")))
     .returning({ id: bookings.id, suiteId: bookings.suiteId })
 
-  for (const suiteId of new Set(completed.map((f) => f.suiteId))) {
-    const [stillInUse] = await tx
-      .select({ id: bookings.id })
-      .from(bookings)
-      .where(and(eq(bookings.suiteId, suiteId), eq(bookings.status, "checked_in")))
-      .limit(1)
-    if (stillInUse) continue
-    await tx.update(suites).set({ status: "cleaning" }).where(and(eq(suites.id, suiteId), eq(suites.status, "occupied")))
-  }
+  for (const suiteId of new Set(completed.map((f) => f.suiteId))) await releaseSuite(tx, suiteId)
   return completed.map((c) => c.id)
 }
 

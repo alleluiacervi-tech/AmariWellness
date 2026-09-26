@@ -13,16 +13,16 @@
  */
 
 import { revalidatePath } from "next/cache"
-import { and, eq, isNull } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { z } from "zod"
 import { db } from "../db/client"
-import { bookings, sessionTypePrices, sessionTypes } from "../db/schema"
+import { bookings, sessionTypes } from "../db/schema"
 import { getLocation } from "../db/content"
 import { requireClientAction } from "../client-auth/dal"
 import { recordActivity } from "../auth/activity"
-import { kigaliWallTimeToUtc } from "../availability/slots"
-import { priceForSlot } from "../availability/pricing"
+import { getDaySlots, kigaliWallTimeToUtc, type Slot } from "../availability/slots"
 import { SlotTakenError } from "../availability/createHold"
+import { bookableDates } from "../../lib/kigaliTime"
 import { notifyAfterResponse } from "../notify/dispatch"
 import { BookingChangeError, cancelByClient, rescheduleByClient } from "./clientChanges"
 
@@ -62,6 +62,37 @@ export async function cancelMyBookingAction(_prev: ChangeState, formData: FormDa
   return { done: "cancelled", refundedRwf: result.refundedRwf, late: result.late }
 }
 
+/** The signed-in client's own booking, with what moving it needs — or null if it isn't theirs. */
+async function ownBooking(clientId: string, bookingId: string) {
+  const [row] = await db
+    .select({ id: bookings.id, offPeak: bookings.offPeak, sessionType: sessionTypes })
+    .from(bookings)
+    .innerJoin(sessionTypes, eq(sessionTypes.id, bookings.sessionTypeId))
+    .where(and(eq(bookings.id, bookingId), eq(bookings.clientId, clientId)))
+    .limit(1)
+  return row ?? null
+}
+
+export type MoveSlots = { slots: Slot[]; quietHoursOnly: boolean }
+
+/**
+ * The times this booking can move to on one day — the booking page's
+ * own slots, but with this booking's current time not counted as taken
+ * (it's the one moving), and flagged when it can only move within quiet
+ * hours. The server re-checks all of it when the move is submitted.
+ */
+export async function getMoveSlotsAction(bookingId: string, dateISO: string): Promise<MoveSlots> {
+  const client = await requireClientAction()
+  if (!z.string().uuid().safeParse(bookingId).success || !bookableDates(new Date()).includes(dateISO)) {
+    return { slots: [], quietHoursOnly: false }
+  }
+  const booking = await ownBooking(client.id, bookingId)
+  if (!booking) return { slots: [], quietHoursOnly: false }
+  const location = await getLocation()
+  const slots = await getDaySlots(db, location, dateISO, booking.sessionType.id, { excludeBookingId: booking.id })
+  return { slots, quietHoursOnly: booking.offPeak }
+}
+
 const rescheduleSchema = z.object({
   bookingId: z.string().uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a day."),
@@ -74,24 +105,22 @@ export async function rescheduleMyBookingAction(_prev: ChangeState, formData: Fo
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Choose a day and time." }
   const { bookingId, date, time } = parsed.data
 
-  const location = await getLocation()
-  const [row] = await db
-    .select({ sessionType: sessionTypes })
-    .from(bookings)
-    .innerJoin(sessionTypes, eq(sessionTypes.id, bookings.sessionTypeId))
-    .where(and(eq(bookings.id, bookingId), eq(bookings.clientId, client.id)))
-    .limit(1)
-  if (!row) return { error: "Booking not found." }
-  const [price] = await db
-    .select()
-    .from(sessionTypePrices)
-    .where(and(eq(sessionTypePrices.sessionTypeId, row.sessionType.id), isNull(sessionTypePrices.effectiveTo)))
-    .limit(1)
-  if (!price) return { error: "This session can't be booked right now." }
+  const booking = await ownBooking(client.id, bookingId)
+  if (!booking) return { error: "Booking not found." }
+  if (!bookableDates(new Date()).includes(date)) return { error: "Choose one of the days shown." }
 
-  const [hour, minute] = time.split(":").map(Number)
-  const newStartAt = kigaliWallTimeToUtc(date, hour, minute)
-  const newEndAt = new Date(newStartAt.getTime() + (row.sessionType.durationMinutes + location.turnoverMinutes) * 60_000)
+  // Only a time the location actually offers that day: inside opening
+  // hours, on the hourly grid, not a closed holiday — and free, with this
+  // booking's own current time not counted against it.
+  const location = await getLocation()
+  const slot = (await getDaySlots(db, location, date, booking.sessionType.id, { excludeBookingId: booking.id })).find(
+    (s) => s.time === time,
+  )
+  if (!slot) return { error: "That time isn't open for booking. Choose one of the times shown." }
+  if (!slot.available) return { error: new SlotTakenError().message }
+
+  const newStartAt = kigaliWallTimeToUtc(date, slot.hour)
+  const newEndAt = new Date(newStartAt.getTime() + (booking.sessionType.durationMinutes + location.turnoverMinutes) * 60_000)
 
   let moved: Awaited<ReturnType<typeof rescheduleByClient>>
   try {
@@ -101,7 +130,7 @@ export async function rescheduleMyBookingAction(_prev: ChangeState, formData: Fo
       cancellationWindowHours: location.cancellationWindowHours,
       newStartAt,
       newEndAt,
-      newSlotPriceRwf: priceForSlot(price, location, date, hour).priceRwf,
+      newSlotOffPeak: slot.quietHours,
     })
   } catch (err) {
     if (err instanceof BookingChangeError || err instanceof SlotTakenError) return { error: err.message }

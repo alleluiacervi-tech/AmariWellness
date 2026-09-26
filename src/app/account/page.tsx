@@ -4,6 +4,8 @@ import { pageMetadata } from "@/lib/metadata"
 import { requireClientPage } from "@/server/client-auth/dal"
 import { clientLogoutAction } from "@/server/client-auth/actions"
 import { getBookingsForClient, type ClientBookingRow } from "@/server/availability/bookingsForClient"
+import { checkInWindow } from "@/server/jobs/policy"
+import { formatISODate, formatKigaliTime, kigaliDateISO } from "@/lib/kigaliTime"
 
 export const metadata = {
   ...pageMetadata({
@@ -15,9 +17,7 @@ export const metadata = {
 }
 
 function formatVisit(b: ClientBookingRow) {
-  const day = new Date(b.startAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Africa/Kigali" })
-  const time = new Date(b.startAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Kigali" })
-  return { day, time }
+  return { day: formatISODate(kigaliDateISO(b.startAt), { day: "numeric", month: "short" }), time: formatKigaliTime(b.startAt) }
 }
 
 const STATUS_NOTE: Record<ClientBookingRow["status"], string> = {
@@ -34,8 +34,10 @@ export default async function AccountPage() {
   const client = await requireClientPage()
   const allBookings = await getBookingsForClient(client.id)
   const now = new Date()
-  const upcoming = allBookings.filter((b) => b.status === "confirmed" && b.startAt > now)
-  const past = allBookings.filter((b) => !(b.status === "confirmed" && b.startAt > now))
+  // Upcoming until the desk would stop accepting its QR, so a client running late still finds it at the top.
+  const isUpcoming = (b: ClientBookingRow) => b.status === "confirmed" && now < checkInWindow(b.startAt).closesAt
+  const upcoming = allBookings.filter(isUpcoming)
+  const past = allBookings.filter((b) => !isUpcoming(b))
 
   return (
     <main id="main-content">

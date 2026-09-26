@@ -57,6 +57,13 @@ A hand-written migration has no snapshot in `migrations/meta/`, so the next
 0003's snapshot now includes them, so the next generate starts clean. Read
 every generated file before committing it.
 
+A generated file can also carry hand-written statements below the generated
+ones, separated by `--> statement-breakpoint`. `0004_checkin_cutover.sql`
+does: drizzle-kit generated its `notifications (booking_id)` index, and the
+one-off data fix under it marks every session that started before check-in
+existed as `completed`, so the no-show job's first run doesn't mark them all
+as missed. Run it right before the deploy that ships the job.
+
 Never edit a migration that has already been applied anywhere (including
 your own machine) — write a new one instead, the same as any other
 migration tool.

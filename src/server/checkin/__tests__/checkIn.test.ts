@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { eq } from "drizzle-orm"
-import { closeTestDatabase, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
+import { closeTestDatabase, concurrentTestDb, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
 import { bookings, suites } from "../../db/schema"
 import { createHold } from "../../availability/createHold"
 import { recordWalkInPayment } from "../../availability/confirm"
@@ -15,8 +15,8 @@ const START = new Date("2027-01-10T08:00:00Z")
 const SAME_DAY = new Date("2027-01-10T07:50:00Z")
 const STAFF = "00000000-0000-4000-8000-000000000099"
 
-async function setup(options: { confirm?: boolean } = {}) {
-  const catalog = await seedMinimalCatalog()
+async function setup(options: { confirm?: boolean; suiteCount?: number } = {}) {
+  const catalog = await seedMinimalCatalog({ suiteCount: options.suiteCount })
   const held = await createHold(testDb, {
     locationId: catalog.location.id,
     sessionTypeId: catalog.sessionType.id,
@@ -73,8 +73,20 @@ describe("lookupQr", () => {
     const dayBefore = await lookupQr(testDb, payload, new Date("2027-01-09T08:00:00Z"))
     expect(dayBefore).toMatchObject({ ok: false, problem: "wrong_day" })
     if (!dayBefore.ok) expect(dayBefore.message).toContain("Sunday 10 January at 10:00")
-    // 22:30 UTC on the 9th is already 00:30 on the 10th in Kigali — the right day.
-    expect((await lookupQr(testDb, payload, new Date("2027-01-09T22:30:00Z"))).ok).toBe(true)
+    // 22:30 UTC on the 9th is already 00:30 on the 10th in Kigali — the right day, just far too early.
+    expect(await lookupQr(testDb, payload, new Date("2027-01-09T22:30:00Z"))).toMatchObject({ ok: false, problem: "too_early" })
+  })
+
+  it("opens 30 minutes before the start and closes when the no-show grace runs out", async () => {
+    const { payload } = await setup()
+    const at = (iso: string) => lookupQr(testDb, payload, new Date(iso))
+    const early = await at("2027-01-10T07:29:00Z") // 09:29 in Kigali
+    expect(early).toMatchObject({ ok: false, problem: "too_early" })
+    if (!early.ok) expect(early.message).toContain("Check-in opens at 09:30")
+    expect((await at("2027-01-10T07:30:00Z")).ok).toBe(true)
+    expect((await at("2027-01-10T08:15:00Z")).ok).toBe(true) // 15 minutes late: still inside the grace
+    // 16 minutes late: a no-show, whether or not the no-show job has run yet.
+    expect(await at("2027-01-10T08:16:00Z")).toMatchObject({ ok: false, problem: "too_late" })
   })
 
   it("rejects a genuine signature for a token the booking no longer carries", async () => {
@@ -119,12 +131,53 @@ describe("checkIn", () => {
 
   it("lets exactly one of two simultaneous scans succeed", async () => {
     const { booking, payload } = await setup()
-    const results = await Promise.all([
-      checkIn(testDb, { bookingId: booking.id, payload, staffUserId: STAFF }, SAME_DAY),
-      checkIn(testDb, { bookingId: booking.id, payload, staffUserId: STAFF }, SAME_DAY),
-    ])
+    const concurrent = concurrentTestDb()
+    let results
+    try {
+      results = await Promise.all([
+        checkIn(concurrent.db, { bookingId: booking.id, payload, staffUserId: STAFF }, SAME_DAY),
+        checkIn(concurrent.db, { bookingId: booking.id, payload, staffUserId: STAFF }, SAME_DAY),
+      ])
+    } finally {
+      await concurrent.close()
+    }
     expect(results.filter((r) => r.ok)).toHaveLength(1)
     expect(results.find((r) => !r.ok)).toMatchObject({ problem: "already_checked_in" })
+  })
+
+  it("lets a walk-in being seated as it's booked in, however late the slot's start", async () => {
+    const { booking } = await setup()
+    const late = new Date("2027-01-10T08:25:00Z")
+    expect(await checkIn(testDb, { bookingId: booking.id, staffUserId: STAFF }, late)).toMatchObject({ ok: false, problem: "too_late" })
+    expect(await checkIn(testDb, { bookingId: booking.id, staffUserId: STAFF, allowLate: true }, late)).toMatchObject({ ok: true })
+  })
+
+  it("seats the guest in a free suite when theirs is in maintenance, leaving the maintenance flag alone", async () => {
+    const { booking, payload, suites: suiteRows } = await setup({ suiteCount: 2 })
+    const [booked, other] = suiteRows[0].id === booking.suiteId ? suiteRows : [suiteRows[1], suiteRows[0]]
+    await testDb.update(suites).set({ status: "maintenance" }).where(eq(suites.id, booked.id))
+
+    const preview = await lookupQr(testDb, payload, SAME_DAY)
+    expect(preview).toMatchObject({ ok: true, preview: { suiteId: other.id, movedFromSuiteName: booked.name } })
+
+    const result = await checkIn(testDb, { bookingId: booking.id, payload, staffUserId: STAFF }, SAME_DAY)
+    expect(result).toMatchObject({ ok: true, preview: { suiteId: other.id, suiteName: other.name } })
+    const [after] = await testDb.select().from(bookings).where(eq(bookings.id, booking.id))
+    expect(after.suiteId).toBe(other.id)
+    const statuses = Object.fromEntries((await testDb.select().from(suites)).map((s) => [s.id, s.status]))
+    expect(statuses[booked.id]).toBe("maintenance")
+    expect(statuses[other.id]).toBe("occupied")
+  })
+
+  it("refuses when the booked suite is in maintenance and no other suite is free", async () => {
+    const { booking, payload, suite } = await setup()
+    await testDb.update(suites).set({ status: "maintenance" }).where(eq(suites.id, suite.id))
+    expect(await checkIn(testDb, { bookingId: booking.id, payload, staffUserId: STAFF }, SAME_DAY)).toMatchObject({
+      ok: false,
+      problem: "suite_unavailable",
+    })
+    const [after] = await testDb.select().from(suites).where(eq(suites.id, suite.id))
+    expect(after.status).toBe("maintenance")
   })
 
   it("supports a manual check-in without a code, under the same day rule", async () => {

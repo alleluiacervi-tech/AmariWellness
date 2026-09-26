@@ -37,8 +37,10 @@ import { findOrCreateClient } from "../people/findOrCreateClient"
 import { refundBooking, RefundError } from "../ledger/refund"
 import { applyDiscount, DiscountError } from "../ledger/discount"
 import { notifyAfterResponse } from "../notify/dispatch"
+import { releaseSuite } from "../checkin/suiteState"
+import { checkIn } from "../checkin/checkIn"
 
-export type ActionState = { error?: string; ok?: boolean }
+export type ActionState = { error?: string; ok?: boolean; notice?: string }
 
 const walkInSchema = z.object({
   sessionTypeId: z.string().uuid(),
@@ -48,13 +50,14 @@ const walkInSchema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/),
   paymentMethod: z.enum(paymentMethodValues),
   healthAck: z.string().optional(),
+  checkInNow: z.string().optional(),
 })
 
 export async function createWalkInBooking(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const staff = await requireStaffAction("bookings.create")
   const parsed = walkInSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the fields — something didn't validate." }
-  const { sessionTypeId, clientName, clientPhone, date, time, paymentMethod, healthAck } = parsed.data
+  const { sessionTypeId, clientName, clientPhone, date, time, paymentMethod, healthAck, checkInNow } = parsed.data
   if (healthAck !== "on") return { error: "Confirm the health questions before booking." }
 
   const location = await getLocation()
@@ -112,8 +115,29 @@ export async function createWalkInBooking(_prev: ActionState, formData: FormData
   // A walk-in with a phone gets the same WhatsApp confirmation and QR as
   // an online booking; one with no phone or email is simply skipped.
   notifyAfterResponse(booking.id, "booking_confirmed")
+
+  // A guest standing at the desk is seated straight away. Without this,
+  // one shown to their suite without a separate "Check in" tap would be
+  // marked a no-show 15 minutes later by the scheduled job.
+  let notice = "Booked."
+  if (checkInNow === "on") {
+    const seated = await checkIn(db, { bookingId: booking.id, staffUserId: staff.id, allowLate: true })
+    if (seated.ok) {
+      await recordActivity({
+        staffUserId: staff.id,
+        action: "booking.checkedIn",
+        entityType: "booking",
+        entityId: booking.id,
+        before: { status: "confirmed" },
+        after: { status: "checked_in", suite: seated.preview.suiteName, via: "walk_in" },
+      })
+      notice = `Booked and checked in to ${seated.preview.suiteName}.`
+    } else {
+      notice = `Booked, but not checked in: ${seated.message}`
+    }
+  }
   revalidatePath("/", "layout")
-  return { ok: true }
+  return { ok: true, notice }
 }
 
 const cancelSchema = z.object({
@@ -128,16 +152,24 @@ export async function cancelBooking(_prev: ActionState, formData: FormData): Pro
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "A reason is required." }
   const { bookingId, reason } = parsed.data
 
-  const [before] = await db.select().from(bookings).where(eq(bookings.id, bookingId)).limit(1)
+  // Locked, so a check-in or a client's own cancellation landing at the
+  // same moment waits for this one instead of being overwritten by it.
+  const before = await db.transaction(async (tx) => {
+    const [row] = await tx.select().from(bookings).where(eq(bookings.id, bookingId)).for("update")
+    if (!row || row.status === "cancelled" || row.status === "completed" || row.status === "no_show") return row ?? null
+    await tx
+      .update(bookings)
+      .set({ status: "cancelled", cancelReason: reason, cancelledByStaffId: staff.id, cancelledAt: new Date(), updatedAt: new Date() })
+      .where(eq(bookings.id, bookingId))
+    // Cancelled while checked in (checked in by mistake, or they left):
+    // the suite is free again, so it can't stay "occupied" with nobody in it.
+    if (row.status === "checked_in") await releaseSuite(tx, row.suiteId)
+    return row
+  })
   if (!before) return { error: "Booking not found." }
   if (before.status === "cancelled" || before.status === "completed" || before.status === "no_show") {
     return { error: "This booking can no longer be cancelled." }
   }
-
-  await db
-    .update(bookings)
-    .set({ status: "cancelled", cancelReason: reason, cancelledByStaffId: staff.id, cancelledAt: new Date(), updatedAt: new Date() })
-    .where(eq(bookings.id, bookingId))
 
   await recordActivity({
     staffUserId: staff.id,
@@ -165,9 +197,9 @@ export async function refundBookingAction(_prev: ActionState, formData: FormData
   const staff = await requireStaffAction("payments.refund")
   const parsed = moneyActionSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the fields — something didn't validate." }
-  let booking: Awaited<ReturnType<typeof refundBooking>>
+  let refund: Awaited<ReturnType<typeof refundBooking>>
   try {
-    booking = await refundBooking(db, { ...parsed.data, staffUserId: staff.id })
+    refund = await refundBooking(db, { ...parsed.data, staffUserId: staff.id })
   } catch (err) {
     if (err instanceof RefundError) return { error: err.message }
     throw err
@@ -176,12 +208,16 @@ export async function refundBookingAction(_prev: ActionState, formData: FormData
     staffUserId: staff.id,
     action: "booking.refunded",
     entityType: "booking",
-    entityId: booking.id,
-    before: { status: booking.status },
-    after: { status: "cancelled", refundedRwf: parsed.data.amountRwf },
+    entityId: refund.before.id,
+    before: { status: refund.before.status },
+    after: { status: refund.statusAfter, refundedRwf: parsed.data.amountRwf },
     reason: parsed.data.reason,
   })
-  notifyAfterResponse(booking.id, "booking_cancelled", { refundedRwf: parsed.data.amountRwf })
+  // Only a client who still expects their session needs "it's cancelled";
+  // someone refunded at the desk mid-session or afterwards is told in person.
+  if (refund.before.status === "confirmed") {
+    notifyAfterResponse(refund.before.id, "booking_cancelled", { refundedRwf: parsed.data.amountRwf })
+  }
   revalidatePath("/", "layout")
   return { ok: true }
 }

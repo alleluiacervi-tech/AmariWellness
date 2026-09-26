@@ -63,11 +63,19 @@ export async function pickAvailableSuite(
   startAt: Date,
   endAt: Date,
   excludeBookingId?: string,
+  /** For seating a guest right now (check-in): skip suites the floor has marked as in maintenance. */
+  options: { usableNow?: boolean } = {},
 ): Promise<string | null> {
   const activeSuites = await db
     .select({ id: suites.id })
     .from(suites)
-    .where(and(eq(suites.locationId, locationId), eq(suites.active, true)))
+    .where(
+      and(
+        eq(suites.locationId, locationId),
+        eq(suites.active, true),
+        options.usableNow ? ne(suites.status, "maintenance") : undefined,
+      ),
+    )
     .orderBy(asc(suites.sortOrder))
 
   for (const suite of activeSuites) {

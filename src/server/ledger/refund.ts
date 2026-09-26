@@ -5,6 +5,7 @@
 import { and, eq, sql } from "drizzle-orm"
 import type { Database, Tx } from "../db/client"
 import { bookings, ledgerEntries, payments } from "../db/schema"
+import { releaseSuite } from "../checkin/suiteState"
 
 export class RefundError extends Error {}
 
@@ -24,17 +25,25 @@ export async function netKeptForBooking(db: Database | Tx, bookingId: string): P
 
 type RefundInput = { bookingId: string; amountRwf: number; reason: string; staffUserId: string | null }
 
+/** A booking still in play when it's refunded is cancelled; one that's already over (completed, a no-show, or cancelled earlier and refunded now) keeps its status — the refund changes the money, not what happened. */
+const CANCELLED_BY_REFUND = ["confirmed", "checked_in"] as const
+
 /**
  * The refund itself, inside a transaction the caller already holds —
  * `refundBooking` below for staff, and a client's own free cancellation
- * (`src/server/booking/clientChanges.ts`), which needs the booking row
- * locked across its policy check and the refund.
+ * (`src/server/booking/clientChanges.ts`).
+ *
+ * The booking row is locked (`FOR UPDATE`) before anything is read.
+ * Every change to a booking's money takes that lock first — a staff
+ * refund, a client cancelling, a discount — so two of them can't both
+ * read the same "still held" amount and each pay it out. The payment is
+ * then flipped only if it's still `succeeded`, as a second guard.
  */
 export async function refundInTransaction(tx: Tx, input: RefundInput) {
   if (input.amountRwf <= 0) throw new RefundError("The refund amount must be greater than zero.")
   if (!input.reason.trim()) throw new RefundError("A reason is required for every refund.")
 
-  const [bookingRow] = await tx.select().from(bookings).where(eq(bookings.id, input.bookingId)).limit(1)
+  const [bookingRow] = await tx.select().from(bookings).where(eq(bookings.id, input.bookingId)).for("update")
   if (!bookingRow) throw new RefundError("Booking not found.")
 
   const [payment] = await tx
@@ -49,17 +58,28 @@ export async function refundInTransaction(tx: Tx, input: RefundInput) {
     throw new RefundError(`The refund cannot exceed what's still held for this booking (${net.toLocaleString("en-RW")} RWF after discounts).`)
   }
 
-  await tx.update(payments).set({ status: "refunded", updatedAt: new Date() }).where(eq(payments.id, payment.id))
-  await tx
-    .update(bookings)
-    .set({
-      status: "cancelled",
-      cancelReason: input.reason,
-      cancelledByStaffId: input.staffUserId,
-      cancelledAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(bookings.id, bookingRow.id))
+  const [flipped] = await tx
+    .update(payments)
+    .set({ status: "refunded", updatedAt: new Date() })
+    .where(and(eq(payments.id, payment.id), eq(payments.status, "succeeded")))
+    .returning({ id: payments.id })
+  if (!flipped) throw new RefundError("This payment has already been refunded.")
+
+  const cancels = (CANCELLED_BY_REFUND as readonly string[]).includes(bookingRow.status)
+  if (cancels) {
+    await tx
+      .update(bookings)
+      .set({
+        status: "cancelled",
+        cancelReason: input.reason,
+        cancelledByStaffId: input.staffUserId,
+        cancelledAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(bookings.id, bookingRow.id))
+    // Refunded mid-session (the chair failed): the guest has left the suite.
+    if (bookingRow.status === "checked_in") await releaseSuite(tx, bookingRow.suiteId)
+  }
   await tx.insert(ledgerEntries).values({
     locationId: bookingRow.locationId,
     type: "refund",
@@ -71,14 +91,14 @@ export async function refundInTransaction(tx: Tx, input: RefundInput) {
     reason: input.reason,
   })
 
-  return bookingRow
+  return { before: bookingRow, statusAfter: cancels ? ("cancelled" as const) : bookingRow.status }
 }
 
 /**
- * Refunds a confirmed booking's payment and cancels the booking, freeing
- * its slot. `amountRwf` may be less than what was paid (a partial
- * refund) but never more — nor more than is still held after any
- * discount. The ledger entry's sign is enforced by a database check
+ * Refunds a booking's payment and, if it was still upcoming or under
+ * way, cancels it, freeing its slot. `amountRwf` may be less than what
+ * was paid (a partial refund) but never more — nor more than is still
+ * held after any discount. The ledger entry's sign is enforced by a database check
  * constraint (migration 0001) as well as here — belt and braces, the
  * same reasoning as every other money rule in this app.
  */

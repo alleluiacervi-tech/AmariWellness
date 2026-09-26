@@ -22,6 +22,8 @@ import { Calendar, Check } from "@/components/icons"
 import type { SessionItem, SiteConfig } from "@/server/db/content"
 import type { Slot } from "@/server/availability/slots"
 import { paymentMethodValues, type PaymentMethod } from "@/server/db/schema"
+import { bookingReference } from "@/lib/booking"
+import { bookableDates, formatISODate } from "@/lib/kigaliTime"
 import { requestOtp, verifyOtpForBooking, acknowledgeHealth, type OtpRequestState, type VerifyBookingState } from "@/server/client-auth/actions"
 import { getSlotsAction, beginPaymentAction, confirmPaymentAction, type BeginPaymentState, type ConfirmPaymentState } from "@/server/booking/actions"
 
@@ -37,9 +39,7 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
 
 const HEALTH_QUESTIONS = ["Pregnancy", "A pacemaker or other implanted device", "Recent surgery", "A spinal injury"]
 
-const fmt = (date: string, options: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", ...options }).format(new Date(`${date}T12:00:00Z`))
-const dateLabel = (date: string) => fmt(date, { weekday: "short", day: "numeric", month: "short" })
+const dateLabel = (date: string) => formatISODate(date, { weekday: "short", day: "numeric", month: "short" })
 const isWeekendDisplay = (date: string) => [0, 6].includes(new Date(`${date}T12:00:00Z`).getUTCDay())
 const pad = (n: number) => String(n).padStart(2, "0")
 
@@ -124,14 +124,9 @@ export default function RealBookingFlow({
   const offPeak = beginState.offPeak ?? (slot ? offPeakForSlot(slot) : false)
   const total = session ? (offPeak ? session.offPeakPrice : session.price) : ""
 
-  /* The next seven days in Kigali, worked out on the visitor's device. */
+  /* The bookable days in Kigali, worked out on the visitor's device after hydration (the server's clock and theirs may straddle midnight). */
   useEffect(() => {
-    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" })
-    const next = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(`${today}T12:00:00Z`)
-      d.setUTCDate(d.getUTCDate() + i + 1)
-      return d.toISOString().slice(0, 10)
-    })
+    const next = bookableDates(new Date())
     setDays(next)
     setDate(next[0])
   }, [])
@@ -172,7 +167,7 @@ export default function RealBookingFlow({
 
   useEffect(() => {
     if (confirmState.confirmed) {
-      setReference(confirmState.bookingId ? `AM-${confirmState.bookingId.slice(0, 8).toUpperCase()}` : "")
+      setReference(confirmState.bookingId ? bookingReference(confirmState.bookingId) : "")
       setQrDataUrl(confirmState.qrDataUrl)
       go(4)
     }
@@ -274,16 +269,16 @@ export default function RealBookingFlow({
                         value={d}
                         checked={date === d}
                         onChange={() => setDate(d)}
-                        aria-label={fmt(d, { weekday: "long", day: "numeric", month: "long" })}
+                        aria-label={formatISODate(d, { weekday: "long", day: "numeric", month: "long" })}
                       />
                       <span className="date__dow" aria-hidden="true">
-                        {fmt(d, { weekday: "short" })}
+                        {formatISODate(d, { weekday: "short" })}
                       </span>
                       <span className="date__day" aria-hidden="true">
-                        {fmt(d, { day: "numeric" })}
+                        {formatISODate(d, { day: "numeric" })}
                       </span>
                       <span className="date__mon" aria-hidden="true">
-                        {fmt(d, { month: "short" })}
+                        {formatISODate(d, { month: "short" })}
                       </span>
                     </label>
                   ))}
@@ -560,7 +555,7 @@ export default function RealBookingFlow({
                   </div>
                   <div>
                     <dt>Day</dt>
-                    <dd>{fmt(date, { weekday: "long", day: "numeric", month: "long" })}</dd>
+                    <dd>{formatISODate(date, { weekday: "long", day: "numeric", month: "long" })}</dd>
                   </div>
                   <div>
                     <dt>Time</dt>

@@ -4,12 +4,13 @@ import Link from "@/components/Link"
 import PageHeader from "@/components/PageHeader"
 import { pageMetadata } from "@/lib/metadata"
 import { bookingReference } from "@/lib/booking"
-import { formatKigaliDay, formatKigaliTime, formatRwf } from "@/lib/kigaliTime"
+import { formatKigaliDay, formatKigaliTime, formatRwf, kigaliDateISO } from "@/lib/kigaliTime"
 import { requireClientPage } from "@/server/client-auth/dal"
 import { getClientBooking } from "@/server/availability/bookingsForClient"
 import { getLocation } from "@/server/db/content"
 import { changePolicy } from "@/server/booking/clientChanges"
 import { encodeQrPayload } from "@/server/qr"
+import { checkInWindow } from "@/server/jobs/policy"
 import ManageBooking from "./ManageBooking"
 
 export const metadata = {
@@ -45,9 +46,9 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
   const now = new Date()
   const policy = changePolicy(booking, location.cancellationWindowHours, now)
   const reference = bookingReference(booking.id)
-  const upcoming = booking.status === "confirmed" && booking.startAt > now
-  const qr = upcoming && booking.qrToken ? await QRCode.toDataURL(encodeQrPayload(booking.id, booking.qrToken), { margin: 1, width: 240 }) : null
-  const heldRwf = booking.money.paidRwf - booking.money.discountRwf - booking.money.refundedRwf
+  // Shown for as long as the desk would still accept it — a client running a few minutes late still has it at the door.
+  const showQr = booking.status === "confirmed" && now < checkInWindow(booking.startAt).closesAt
+  const qr = showQr && booking.qrToken ? await QRCode.toDataURL(encodeQrPayload(booking.id, booking.qrToken), { margin: 1, width: 240 }) : null
 
   return (
     <main id="main-content">
@@ -154,7 +155,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
               ) : (
                 <ManageBooking
                   bookingId={booking.id}
-                  sessionTypeId={booking.sessionTypeId}
+                  current={{ date: kigaliDateISO(booking.startAt), time: formatKigaliTime(booking.startAt) }}
                   policy={
                     "freeUntil" in policy
                       ? {
@@ -163,7 +164,7 @@ export default async function BookingDetailPage({ params }: { params: Promise<{ 
                         }
                       : policy
                   }
-                  refundableRwf={Math.max(0, heldRwf)}
+                  refundableRwf={Math.max(0, booking.money.heldRwf)}
                   cancellationWindowHours={location.cancellationWindowHours}
                   whatsapp={location.whatsapp ?? ""}
                 />

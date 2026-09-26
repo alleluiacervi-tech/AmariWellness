@@ -9,34 +9,41 @@
  */
 
 import { useActionState, useEffect, useState, useTransition } from "react"
-import { cancelMyBookingAction, rescheduleMyBookingAction, type ChangeState } from "@/server/booking/accountActions"
-import { getSlotsAction } from "@/server/booking/actions"
-import type { Slot } from "@/server/availability/slots"
-import { formatRwf } from "@/lib/kigaliTime"
+import {
+  cancelMyBookingAction,
+  getMoveSlotsAction,
+  rescheduleMyBookingAction,
+  type ChangeState,
+  type MoveSlots,
+} from "@/server/booking/accountActions"
+import { bookableDates, formatISODate, formatRwf } from "@/lib/kigaliTime"
 
 type Policy = { kind: "free" | "late"; freeUntilLabel: string } | { kind: "desk" } | { kind: "closed" }
 
-const fmt = (iso: string, options: Intl.DateTimeFormatOptions) =>
-  new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { ...options, timeZone: "UTC" })
-
 export default function ManageBooking({
   bookingId,
-  sessionTypeId,
+  current,
   policy,
   refundableRwf,
   cancellationWindowHours,
   whatsapp,
 }: {
   bookingId: string
-  sessionTypeId: string
+  /** The booking's current Kigali date and time, which the move form marks as "your time". */
+  current: { date: string; time: string }
   policy: Policy
   refundableRwf: number
   cancellationWindowHours: number
   whatsapp: string
 }) {
   const [mode, setMode] = useState<"idle" | "move" | "cancel">("idle")
+  const [moved, setMoved] = useState(false)
   const [cancelState, cancelAction, cancelPending] = useActionState<ChangeState, FormData>(cancelMyBookingAction, {})
-  const [moveState, moveAction, movePending] = useActionState<ChangeState, FormData>(rescheduleMyBookingAction, {})
+
+  function open(next: "move" | "cancel") {
+    setMoved(false)
+    setMode(next)
+  }
 
   if (cancelState.done === "cancelled") {
     return (
@@ -66,7 +73,7 @@ export default function ManageBooking({
 
   return (
     <div className="stack">
-      {moveState.done === "moved" && (
+      {moved && (
         <p className="lead" role="status">
           Moved. The new time is above, and a confirmation is on its way. Your QR code stays the same.
         </p>
@@ -80,11 +87,11 @@ export default function ManageBooking({
       {mode === "idle" && (
         <div className="cluster">
           {policy.kind === "free" && (
-            <button className="btn" type="button" onClick={() => setMode("move")}>
+            <button className="btn" type="button" onClick={() => open("move")}>
               Move to another time
             </button>
           )}
-          <button className="btn btn--outline" type="button" onClick={() => setMode("cancel")}>
+          <button className="btn btn--outline" type="button" onClick={() => open("cancel")}>
             Cancel booking
           </button>
         </div>
@@ -119,62 +126,51 @@ export default function ManageBooking({
       {mode === "move" && policy.kind === "free" && (
         <MoveForm
           bookingId={bookingId}
-          sessionTypeId={sessionTypeId}
-          action={moveAction}
-          pending={movePending}
-          error={moveState.error}
+          current={current}
           onClose={() => setMode("idle")}
-          done={moveState.done === "moved"}
+          onMoved={() => {
+            setMoved(true)
+            setMode("idle")
+          }}
         />
       )}
     </div>
   )
 }
 
+/**
+ * Mounted fresh each time "Move to another time" is opened, so its
+ * form state (and a previous move's success) never carries over.
+ */
 function MoveForm({
   bookingId,
-  sessionTypeId,
-  action,
-  pending,
-  error,
+  current,
   onClose,
-  done,
+  onMoved,
 }: {
   bookingId: string
-  sessionTypeId: string
-  action: (formData: FormData) => void
-  pending: boolean
-  error?: string
+  current: { date: string; time: string }
   onClose: () => void
-  done: boolean
+  onMoved: () => void
 }) {
-  const [days, setDays] = useState<string[]>([])
-  const [date, setDate] = useState("")
+  const [state, action, pending] = useActionState<ChangeState, FormData>(rescheduleMyBookingAction, {})
+  // Only ever rendered after a tap, never on the server, so reading the clock here can't cause a hydration mismatch.
+  const [days] = useState(() => bookableDates(new Date()))
+  const [date, setDate] = useState(days[0])
   const [slot, setSlot] = useState("")
-  const [slots, setSlots] = useState<Slot[]>([])
+  const [moveSlots, setMoveSlots] = useState<MoveSlots>({ slots: [], quietHoursOnly: false })
   const [loading, startLoading] = useTransition()
 
-  // The same days the booking page offers: the next seven, from tomorrow, in Kigali.
   useEffect(() => {
-    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Kigali" })
-    const next = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(`${today}T12:00:00Z`)
-      d.setUTCDate(d.getUTCDate() + i + 1)
-      return d.toISOString().slice(0, 10)
-    })
-    setDays(next)
-    setDate(next[0])
-  }, [])
-
-  useEffect(() => {
-    if (!date) return
     setSlot("")
-    startLoading(async () => setSlots(await getSlotsAction(date, sessionTypeId)))
-  }, [date, sessionTypeId])
+    startLoading(async () => setMoveSlots(await getMoveSlotsAction(bookingId, date)))
+  }, [bookingId, date])
 
   useEffect(() => {
-    if (done) onClose()
-  }, [done, onClose])
+    if (state.done === "moved") onMoved()
+  }, [state, onMoved])
+
+  const { slots, quietHoursOnly } = moveSlots
 
   return (
     <form action={action} className="form-card">
@@ -190,16 +186,16 @@ function MoveForm({
                 value={d}
                 checked={date === d}
                 onChange={() => setDate(d)}
-                aria-label={fmt(d, { weekday: "long", day: "numeric", month: "long" })}
+                aria-label={formatISODate(d, { weekday: "long", day: "numeric", month: "long" })}
               />
               <span className="date__dow" aria-hidden="true">
-                {fmt(d, { weekday: "short" })}
+                {formatISODate(d, { weekday: "short" })}
               </span>
               <span className="date__day" aria-hidden="true">
-                {fmt(d, { day: "numeric" })}
+                {formatISODate(d, { day: "numeric" })}
               </span>
               <span className="date__mon" aria-hidden="true">
-                {fmt(d, { month: "short" })}
+                {formatISODate(d, { month: "short" })}
               </span>
             </label>
           ))}
@@ -207,32 +203,41 @@ function MoveForm({
       </fieldset>
       <fieldset className="fieldset">
         <legend className="legend">Time</legend>
+        {quietHoursOnly && (
+          <p className="meta">You booked at the quiet-hours price, so you can move to another quiet-hours time.</p>
+        )}
         {loading ? (
           <p className="meta">Checking availability…</p>
         ) : slots.length === 0 ? (
           <p className="meta">Nothing available this day — try another.</p>
         ) : (
           <div className="slots">
-            {slots.map((s) => (
-              <label className="slot" key={s.time} data-taken={!s.available || undefined}>
-                <input
-                  type="radio"
-                  name="time"
-                  value={s.time}
-                  checked={slot === s.time}
-                  disabled={!s.available}
-                  onChange={() => setSlot(s.time)}
-                />
-                <span>{s.time}</span>
-                {!s.available ? <span className="slot__note">Taken</span> : s.quietHours && <span className="slot__note">Quiet hours</span>}
-              </label>
-            ))}
+            {slots.map((s) => {
+              const yours = date === current.date && s.time === current.time
+              const peak = quietHoursOnly && !s.quietHours
+              const note = yours ? "Your time" : !s.available ? "Taken" : peak ? "Peak hours" : s.quietHours ? "Quiet hours" : null
+              const disabled = yours || !s.available || peak
+              return (
+                <label className="slot" key={s.time} data-taken={disabled || undefined}>
+                  <input
+                    type="radio"
+                    name="time"
+                    value={s.time}
+                    checked={slot === s.time}
+                    disabled={disabled}
+                    onChange={() => setSlot(s.time)}
+                  />
+                  <span>{s.time}</span>
+                  {note && <span className="slot__note">{note}</span>}
+                </label>
+              )
+            })}
           </div>
         )}
       </fieldset>
-      {error && (
+      {state.error && (
         <p className="small" role="alert" style={{ color: "var(--alarm)" }}>
-          {error}
+          {state.error}
         </p>
       )}
       <div className="cluster">

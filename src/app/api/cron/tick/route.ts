@@ -25,7 +25,8 @@ function authorized(request: NextRequest): boolean {
 
 async function tick(request: NextRequest) {
   if (!authorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const result = await runTick(db, defaultNotifyDeps())
+  // Passed uncalled, so a misconfigured message provider fails only the reminders job, not every job (see runTick).
+  const result = await runTick(db, defaultNotifyDeps)
   if (result.errors.length) console.error("[cron/tick] job errors:", result.errors)
   return NextResponse.json({ ok: result.errors.length === 0, ...result }, { status: result.errors.length ? 500 : 200 })
 }

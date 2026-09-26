@@ -24,3 +24,26 @@ export function formatKigaliDay(d: Date): string {
 export function formatRwf(amount: number): string {
   return `${amount.toLocaleString("en-RW")} RWF`
 }
+
+/** A calendar date ("2026-09-27") formatted as that date, whatever the device's own time zone. */
+export function formatISODate(dateISO: string, options: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(new Date(`${dateISO}T12:00:00Z`))
+}
+
+/** How many days ahead a client can book, or move a booking to, online. */
+export const BOOKING_HORIZON_DAYS = 7
+
+/**
+ * The Kigali dates a client can book or move a booking to online: the
+ * next `BOOKING_HORIZON_DAYS`, starting tomorrow. The booking page and
+ * the move form both offer exactly these, and the server refuses any
+ * other date, so the list and the rule can't drift apart.
+ */
+export function bookableDates(now: Date): string[] {
+  const today = kigaliDateISO(now)
+  return Array.from({ length: BOOKING_HORIZON_DAYS }, (_, i) => {
+    const d = new Date(`${today}T12:00:00Z`)
+    d.setUTCDate(d.getUTCDate() + i + 1)
+    return d.toISOString().slice(0, 10)
+  })
+}

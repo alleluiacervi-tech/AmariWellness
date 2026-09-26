@@ -16,6 +16,8 @@ const ctx: BookingMessageContext = {
   mapsUrl: "https://maps.example/amari",
   accountUrl: "https://amari.test/account",
   cancellationWindowHours: 4,
+  changeableOnline: true,
+  whatsappUrl: "https://wa.me/250780000000",
 }
 
 describe("renderBookingMessage", () => {
@@ -30,6 +32,12 @@ describe("renderBookingMessage", () => {
     expect(m.text).toContain("free of charge up to 4 hours before: https://amari.test/account")
     expect(m.includesQr).toBe(true)
     expect(m.html).toContain('src="cid:qr"')
+  })
+
+  it("points a booking made at reception to the desk, not to an online change it would refuse", () => {
+    const m = renderBookingMessage("booking_confirmed", { ...ctx, changeableOnline: false })
+    expect(m.text).not.toContain("https://amari.test/account")
+    expect(m.text).toContain("Contact us up to 4 hours before: https://wa.me/250780000000")
   })
 
   it("escapes client-supplied text in the HTML version", () => {

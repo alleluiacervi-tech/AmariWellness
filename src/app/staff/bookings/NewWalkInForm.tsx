@@ -69,12 +69,20 @@ export default function NewWalkInForm({ sessions, date }: { sessions: SessionIte
           concern.
         </span>
       </label>
+      <label className="cluster items-start">
+        <input type="checkbox" name="checkInNow" defaultChecked />
+        <span className="small">They&rsquo;re here now: check them in as soon as it&rsquo;s booked.</span>
+      </label>
       {state.error && (
         <p className="small" role="alert" style={{ color: "var(--alarm)" }}>
           {state.error}
         </p>
       )}
-      {state.ok && <p className="small">Booked.</p>}
+      {state.ok && (
+        <p className="small" role="status">
+          {state.notice ?? "Booked."}
+        </p>
+      )}
       <button className="btn" type="submit" disabled={pending}>
         {pending ? "Booking…" : "Book & mark paid"}
       </button>

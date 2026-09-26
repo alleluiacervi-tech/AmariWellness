@@ -1,8 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
 import { and, eq } from "drizzle-orm"
-import { closeTestDatabase, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
-import { bookings, ledgerEntries } from "../../db/schema"
+import { closeTestDatabase, concurrentTestDb, resetTestDatabase, seedMinimalCatalog, testDb } from "../../db/test-helpers"
+import { bookings, ledgerEntries, payments } from "../../db/schema"
 import { DiscountError, applyDiscount } from "../discount"
+import { netKeptForBooking, refundBooking } from "../refund"
 
 const STAFF_ID = "00000000-0000-4000-8000-000000000099"
 
@@ -104,5 +105,29 @@ describe("applyDiscount", () => {
     await expect(
       applyDiscount(testDb, { bookingId: booking.id, amountRwf: 6000, reason: "x", staffUserId: STAFF_ID }),
     ).rejects.toThrow(/5,000 RWF/)
+  })
+
+  it("can't be combined with a refund landing at the same moment to give back more than was paid", async () => {
+    const booking = await bookingWithStatus("confirmed")
+    await testDb.insert(payments).values({
+      locationId: booking.locationId,
+      provider: "sandbox",
+      providerReference: `ref_${booking.id}`,
+      bookingId: booking.id,
+      clientId: booking.clientId,
+      amountRwf: 15000,
+      method: "momo",
+      status: "succeeded",
+    })
+    const concurrent = concurrentTestDb()
+    try {
+      await Promise.allSettled([
+        applyDiscount(concurrent.db, { bookingId: booking.id, amountRwf: 10000, reason: "x", staffUserId: STAFF_ID }),
+        refundBooking(concurrent.db, { bookingId: booking.id, amountRwf: 15000, reason: "y", staffUserId: STAFF_ID }),
+      ])
+    } finally {
+      await concurrent.close()
+    }
+    expect(await netKeptForBooking(testDb, booking.id)).toBeGreaterThanOrEqual(0)
   })
 })

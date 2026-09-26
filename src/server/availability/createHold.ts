@@ -1,10 +1,10 @@
 // No `server-only` guard, deliberately — see conflicts.ts's comment.
 // Callers inside Next (Server Actions, route handlers) pass in the real
 // `db` from `src/server/db/client.ts`; tests pass `testDb`.
-import { and, eq, lt } from "drizzle-orm"
 import type { Database } from "../db/client"
-import { bookings, type BookingStatus } from "../db/schema"
+import { bookings } from "../db/schema"
 import { pickAvailableSuite } from "./conflicts"
+import { expireSuiteStaleHolds } from "./expireStaleHolds"
 
 export class SlotTakenError extends Error {
   constructor() {
@@ -36,10 +36,9 @@ export type CreateHoldInput = {
  * `SlotTakenError` from the `catch` below, never a silent overwrite.
  *
  * Before inserting, this suite's own stale ("held" past `holdExpiresAt`)
- * bookings are expired inside the same transaction — see migration
- * 0001's comment on why the exclusion constraint itself can't know about
- * hold expiry, and `src/server/availability/expireStaleHolds.ts` for the
- * belt-and-braces global sweep this doesn't replace.
+ * bookings are expired inside the same transaction
+ * (`expireSuiteStaleHolds` — see its comment on why the exclusion
+ * constraint itself can't know about hold expiry).
  */
 export async function createHold(db: Database, input: CreateHoldInput) {
   const suiteId = input.suiteId ?? (await pickAvailableSuite(db, input.locationId, input.startAt, input.endAt))
@@ -47,10 +46,7 @@ export async function createHold(db: Database, input: CreateHoldInput) {
 
   try {
     return await db.transaction(async (tx) => {
-      await tx
-        .update(bookings)
-        .set({ status: "cancelled" as BookingStatus, cancelReason: "Hold expired without payment" })
-        .where(and(eq(bookings.suiteId, suiteId), eq(bookings.status, "held"), lt(bookings.holdExpiresAt, new Date())))
+      await expireSuiteStaleHolds(tx, suiteId)
 
       const [row] = await tx
         .insert(bookings)
@@ -72,8 +68,13 @@ export async function createHold(db: Database, input: CreateHoldInput) {
       return row
     })
   } catch (err) {
-    const message = err instanceof Error ? ((err.cause as Error | undefined)?.message ?? err.message) : String(err)
-    if (message.includes("bookings_no_overlap")) throw new SlotTakenError()
+    if (isOverlapError(err)) throw new SlotTakenError()
     throw err
   }
+}
+
+/** Whether a failed write was the `bookings_no_overlap` exclusion constraint deciding a race — Drizzle puts the Postgres error on `.cause`. */
+export function isOverlapError(err: unknown): boolean {
+  const message = err instanceof Error ? ((err.cause as Error | undefined)?.message ?? err.message) : String(err)
+  return message.includes("bookings_no_overlap")
 }
