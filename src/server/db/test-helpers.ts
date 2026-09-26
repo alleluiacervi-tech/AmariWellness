@@ -39,6 +39,7 @@ const TABLES_IN_DELETE_ORDER = [
   "pack_purchases",
   "company_invoices",
   "company_members",
+  "notifications",
   "bookings",
   "messages",
   "promo_codes",
@@ -69,6 +70,18 @@ export async function resetTestDatabase() {
 
 export async function closeTestDatabase() {
   await client.end()
+}
+
+/**
+ * A second, separate pool with several connections. `testDb` has one
+ * connection, so two transactions started with `Promise.all` on it simply
+ * queue behind each other; a test that needs them genuinely concurrent —
+ * to prove a row lock or a conditional update decides a race — runs them
+ * on this instead. Close it at the end of the test.
+ */
+export function concurrentTestDb(max = 4) {
+  const pool = postgres(connectionString!, { max })
+  return { db: drizzle(pool, { schema }), close: () => pool.end() }
 }
 
 /**

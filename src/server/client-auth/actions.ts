@@ -93,6 +93,7 @@ const verifyForBookingSchema = z.object({
   phone: z.string().trim().min(1),
   code: z.string().trim().regex(/^\d{6}$/, "Enter the 6-digit code."),
   name: z.string().trim().min(1, "Enter your name.").max(80),
+  email: z.union([z.literal(""), z.string().trim().email("Enter a valid email, or leave it blank.").max(200)]).optional(),
 })
 
 export type VerifyBookingState = {
@@ -110,7 +111,7 @@ export async function verifyOtpForBooking(_prev: VerifyBookingState, formData: F
   const result = await consumeValidOtp(phone, parsed.data.code)
   if ("error" in result) return { error: result.error }
 
-  const client = await findOrCreateClient({ name: parsed.data.name, phone })
+  const client = await findOrCreateClient({ name: parsed.data.name, phone, email: parsed.data.email, phoneVerified: true })
   await createClientSession(client.id)
 
   return { verified: true, clientId: client.id, needsHealthAck: !client.healthAcknowledgedAt }

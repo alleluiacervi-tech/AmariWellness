@@ -7,6 +7,7 @@ import { activityLog } from "@/server/db/schema"
 import { can, ROLE_LABELS } from "@/server/auth/roles"
 
 const SECTIONS = [
+  { href: "/staff/floor", label: "Check-in and floor", capability: "bookings.checkIn" as const },
   { href: "/staff/bookings", label: "Bookings", capability: "bookings.view" as const },
   { href: "/staff/sessions", label: "Sessions & pricing", capability: "prices.edit" as const },
   { href: "/staff/location", label: "Location & hours", capability: "hours.edit" as const },
@@ -49,11 +50,16 @@ export default async function StaffHomePage() {
               Signed in as {staff.email} · <span className="tag">{ROLE_LABELS[staff.role]}</span>
             </p>
           </div>
-          <form action={logoutAction}>
-            <button className="btn btn--outline" type="submit">
-              Sign out
-            </button>
-          </form>
+          <div className="cluster">
+            <Link className="tlink" href="/staff/password">
+              Change password
+            </Link>
+            <form action={logoutAction}>
+              <button className="btn btn--outline" type="submit">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="stack--tight">

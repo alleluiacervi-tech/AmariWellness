@@ -20,6 +20,8 @@ import { priceForSlot } from "../availability/pricing"
 import { createHold, SlotTakenError } from "../availability/createHold"
 import { beginSandboxPayment, confirmSandboxPayment, PaymentNotPendingError } from "../availability/confirm"
 import { encodeQrPayload } from "../qr"
+import { notifyAfterResponse } from "../notify/dispatch"
+import { bookableDates } from "../../lib/kigaliTime"
 
 export async function getSlotsAction(dateISO: string, sessionTypeUuid: string): Promise<Slot[]> {
   const location = await getLocation()
@@ -58,12 +60,16 @@ export async function beginPaymentAction(_prev: BeginPaymentState, formData: For
     .limit(1)
   if (!price) return { error: "No current price found for that session." }
 
-  const [hourText, minuteText] = time.split(":")
-  const hour = Number(hourText)
-  const minute = Number(minuteText)
-  const startAt = kigaliWallTimeToUtc(date, hour, minute)
+  // Only a time the booking page would have offered: one of the next
+  // days it lists, inside opening hours, on the hourly grid, and free.
+  if (!bookableDates(new Date()).includes(date)) return { error: "Choose one of the days shown." }
+  const slot = (await getDaySlots(db, location, date, sessionTypeId)).find((s) => s.time === time)
+  if (!slot) return { error: "That time isn't open for booking. Choose one of the times shown." }
+  if (!slot.available) return { error: new SlotTakenError().message }
+
+  const startAt = kigaliWallTimeToUtc(date, slot.hour)
   const endAt = new Date(startAt.getTime() + (sessionType.durationMinutes + location.turnoverMinutes) * 60_000)
-  const { priceRwf, offPeak } = priceForSlot(price, location, date, hour)
+  const { priceRwf, offPeak } = priceForSlot(price, location, date, slot.hour)
 
   let booking
   try {
@@ -116,6 +122,10 @@ export async function confirmPaymentAction(_prev: ConfirmPaymentState, formData:
     if (err instanceof PaymentNotPendingError) return { error: err.message }
     throw err
   }
+
+  // Email + WhatsApp with the QR, sent after this response so a slow
+  // provider never holds up the confirmation screen.
+  notifyAfterResponse(booking.id, "booking_confirmed")
 
   // Rendered server-side (same QRCode.toDataURL pattern staff TOTP
   // enrollment already uses) so the qrcode package never needs to ship

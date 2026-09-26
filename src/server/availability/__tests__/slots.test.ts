@@ -51,6 +51,26 @@ describe("getDaySlots", () => {
     expect(tenOClock?.suitesFree).toBe(0)
   })
 
+  it("doesn't count a booking being moved against its own time", async () => {
+    const { location, suite, sessionType, client } = await seedMinimalCatalog()
+    const [own] = await testDb
+      .insert(bookings)
+      .values({
+        locationId: location.id,
+        suiteId: suite.id,
+        sessionTypeId: sessionType.id,
+        clientId: client.id,
+        startAt: new Date(`${WEEKDAY}T10:00:00+02:00`),
+        endAt: new Date(`${WEEKDAY}T10:45:00+02:00`),
+        status: "confirmed",
+        priceAtBookingRwf: 15000,
+      })
+      .returning()
+
+    const slots = await getDaySlots(testDb, location, WEEKDAY, sessionType.id, { excludeBookingId: own.id })
+    expect(slots.find((s) => s.hour === 10)?.available).toBe(true)
+  })
+
   it("keeps a slot available on another suite when only one of several is booked", async () => {
     const { location, sessionType, client } = await seedMinimalCatalog({ suiteCount: 2 })
     const suiteRows = await testDb.select().from(suites).where(eq(suites.locationId, location.id)).orderBy(asc(suites.sortOrder))

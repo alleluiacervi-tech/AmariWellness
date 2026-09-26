@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { boolean, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { locations } from "./locations"
 import { suites } from "./suites"
 import { sessionTypes } from "./catalog"
@@ -94,3 +94,44 @@ export const messages = pgTable("messages", {
   repliedAt: timestamp("replied_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
+
+export const notificationChannelValues = ["email", "whatsapp"] as const
+export type NotificationChannel = (typeof notificationChannelValues)[number]
+export const notificationTemplateValues = [
+  "booking_confirmed",
+  "booking_rescheduled",
+  "booking_cancelled",
+  "reminder_24h",
+  "reminder_2h",
+] as const
+export type NotificationTemplate = (typeof notificationTemplateValues)[number]
+
+/**
+ * Every outbound message about a booking (Phase 1.5): the confirmation
+ * with its QR, the 24-hour and 2-hour reminders, a reschedule or a
+ * cancellation. One row per channel per send — including a failed one,
+ * with the provider's error — so "did this client get their QR?" is a
+ * query, not a guess. The body is kept so staff can see exactly what
+ * went out; one-time sign-in codes are never written here.
+ */
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  locationId: uuid("location_id")
+    .notNull()
+    .references(() => locations.id, { onDelete: "cascade" }),
+  bookingId: uuid("booking_id").references(() => bookings.id, { onDelete: "set null" }),
+  clientId: uuid("client_id").references(() => clients.id, { onDelete: "set null" }),
+  channel: text("channel", { enum: notificationChannelValues }).notNull(),
+  template: text("template", { enum: notificationTemplateValues }).notNull(),
+  recipient: text("recipient").notNull(),
+  subject: text("subject"),
+  body: text("body").notNull(),
+  status: text("status", { enum: ["sent", "failed"] }).notNull(),
+  provider: text("provider").notNull(),
+  providerMessageId: text("provider_message_id"),
+  error: text("error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+},
+  // The staff board reads each of today's bookings' messages on every load; a few rows per booking, forever.
+  (t) => [index("notifications_booking_id_idx").on(t.bookingId)],
+)

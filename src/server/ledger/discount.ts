@@ -4,6 +4,7 @@
 import { eq } from "drizzle-orm"
 import type { Database } from "../db/client"
 import { bookings, ledgerEntries } from "../db/schema"
+import { netKeptForBooking } from "./refund"
 
 export class DiscountError extends Error {}
 
@@ -22,21 +23,30 @@ export async function applyDiscount(
   if (input.amountRwf <= 0) throw new DiscountError("The discount amount must be greater than zero.")
   if (!input.reason.trim()) throw new DiscountError("A reason is required for every discount.")
 
-  const [booking] = await db.select().from(bookings).where(eq(bookings.id, input.bookingId)).limit(1)
-  if (!booking) throw new DiscountError("Booking not found.")
-  if (booking.status !== "confirmed" && booking.status !== "checked_in" && booking.status !== "completed") {
-    throw new DiscountError("Only a confirmed booking can receive a discount.")
-  }
+  return db.transaction(async (tx) => {
+    // The same lock a refund or a client's cancellation takes first (see
+    // refund.ts), so the "still held" check below can't be read by two
+    // money changes at once.
+    const [booking] = await tx.select().from(bookings).where(eq(bookings.id, input.bookingId)).for("update")
+    if (!booking) throw new DiscountError("Booking not found.")
+    if (booking.status !== "confirmed" && booking.status !== "checked_in" && booking.status !== "completed") {
+      throw new DiscountError("Only a confirmed booking can receive a discount.")
+    }
+    const net = await netKeptForBooking(tx, booking.id)
+    if (input.amountRwf > net) {
+      throw new DiscountError(`The discount cannot exceed what's still held for this booking (${net.toLocaleString("en-RW")} RWF).`)
+    }
 
-  await db.insert(ledgerEntries).values({
-    locationId: booking.locationId,
-    type: "discount_applied",
-    amountRwf: -input.amountRwf,
-    bookingId: booking.id,
-    clientId: booking.clientId,
-    staffUserId: input.staffUserId,
-    reason: input.reason,
+    await tx.insert(ledgerEntries).values({
+      locationId: booking.locationId,
+      type: "discount_applied",
+      amountRwf: -input.amountRwf,
+      bookingId: booking.id,
+      clientId: booking.clientId,
+      staffUserId: input.staffUserId,
+      reason: input.reason,
+    })
+
+    return booking
   })
-
-  return booking
 }

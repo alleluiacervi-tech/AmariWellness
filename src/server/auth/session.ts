@@ -137,6 +137,8 @@ export interface StaffSummary {
   name: string
   email: string
   role: (typeof staffUsers.$inferSelect)["role"]
+  /** Still on a password somebody else set (see `staffUsers.passwordChangedAt`): every staff page but the password one redirects there. */
+  mustChangePassword: boolean
 }
 
 export type SessionState =
@@ -166,6 +168,7 @@ export async function readSessionState(): Promise<SessionState> {
       email: staffUsers.email,
       role: staffUsers.role,
       active: staffUsers.active,
+      passwordChangedAt: staffUsers.passwordChangedAt,
     })
     .from(staffAuthSessions)
     .innerJoin(staffUsers, eq(staffAuthSessions.staffUserId, staffUsers.id))
@@ -175,7 +178,13 @@ export async function readSessionState(): Promise<SessionState> {
   const row = rows[0]
   if (!row || !row.active) return { status: "unauthenticated" }
 
-  const staff: StaffSummary = { id: row.staffId, name: row.name, email: row.email, role: row.role }
+  const staff: StaffSummary = {
+    id: row.staffId,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    mustChangePassword: row.passwordChangedAt === null,
+  }
   return row.mfaVerifiedAt
     ? { status: "authenticated", staff, sessionId: row.sessionId }
     : { status: "awaiting_mfa", staff, sessionId: row.sessionId }
